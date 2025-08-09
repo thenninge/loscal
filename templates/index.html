@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lørenskog Skytterlag Aktivitetskalender</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="app">
+        <!-- Header -->
+        <header class="header">
+            <h1><i class="fas fa-calendar-alt"></i> Lørenskog Skytterlag Aktivitetskalender</h1>
+                    <div class="header-controls">
+            <button id="viewToggle" class="btn btn-secondary">
+                <i class="fas fa-list"></i> Liste
+            </button>
+            <button id="adminBtn" class="btn btn-admin">
+                <i class="fas fa-cog"></i>
+            </button>
+        </div>
+        
+        <!-- Admin Mode Controls (hidden by default) -->
+        <div id="adminModeControls" class="admin-mode-controls hidden">
+            <button id="addActivityBtnMain" class="btn btn-admin-action" title="Legg til ny aktivitet">
+                <i class="fas fa-plus"></i>
+            </button>
+            <button id="importCalendarBtnMain" class="btn btn-admin-action" title="Last inn ekstern kalender">
+                <i class="fas fa-download"></i>
+            </button>
+            <button id="checkDuplicatesBtnMain" class="btn btn-admin-action" title="Sjekk for duplikater">
+                <i class="fas fa-search"></i>
+            </button>
+        </div>
+        </header>
+
+        <!-- Filter Section -->
+        <section class="filters">
+            <div class="filter-header">
+                <h3>Filtrer aktiviteter:</h3>
+                <div class="filter-controls">
+                    <button id="toggleFilters" class="btn btn-small btn-secondary">
+                        <i class="fas fa-chevron-down"></i> Vis filtre
+                    </button>
+                    <button id="clearFilters" class="btn btn-small btn-secondary">
+                        <i class="fas fa-times"></i> Fjern alle valg
+                    </button>
+                </div>
+            </div>
+            <div class="filter-info">
+                <small><i class="fas fa-info-circle"></i> Kun fremtidige aktiviteter vises</small>
+            </div>
+            <div id="filterCheckboxes" class="filter-checkboxes collapsed">
+                <label class="filter-item">
+                    <input type="checkbox" value="Åpen for alle" checked>
+                    <span class="color-dot" style="background-color: #FF6B6B;"></span>
+                    Åpen for alle
+                </label>
+                <label class="filter-item">
+                    <input type="checkbox" value="Jaktskyting" checked>
+                    <span class="color-dot" style="background-color: #3B82F6;"></span>
+                    Jaktskyting
+                </label>
+                <label class="filter-item">
+                    <input type="checkbox" value="DFS" checked>
+                    <span class="color-dot" style="background-color: #FFFFFF; border: 1px solid #ddd;"></span>
+                    DFS
+                </label>
+                <label class="filter-item">
+                    <input type="checkbox" value="Pistol" checked>
+                    <span class="color-dot" style="background-color: #F59E0B;"></span>
+                    Pistol
+                </label>
+                <label class="filter-item">
+                    <input type="checkbox" value="Storviltprøve" checked>
+                    <span class="color-dot" style="background-color: #10B981;"></span>
+                    Storviltprøve
+                </label>
+                <label class="filter-item">
+                    <input type="checkbox" value="Annet" checked>
+                    <span class="color-dot" style="background-color: #6B7280;"></span>
+                    Annet
+                </label>
+                <label class="filter-item">
+                    <input type="checkbox" value="Stevne" checked>
+                    <span class="color-dot" style="background-color: #8B5CF6;"></span>
+                    Stevne
+                </label>
+                <label class="filter-item">
+                    <input type="checkbox" value="Uavklart" checked>
+                    <span class="color-dot" style="background-color: #EF4444;"></span>
+                    Uavklart
+                </label>
+            </div>
+        </section>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- List View -->
+            <div id="listView" class="view active">
+                <div class="list-container">
+                    <!-- Items will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Calendar View -->
+            <div id="calendarView" class="view">
+                <div class="calendar-header">
+                    <button id="prevMonth" class="btn btn-secondary">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <h2 id="currentMonth">Januar 2024</h2>
+                    <button id="nextMonth" class="btn btn-secondary">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+                <div class="calendar-grid">
+                    <!-- Calendar will be populated by JavaScript -->
+                </div>
+            </div>
+        </main>
+
+        <!-- Admin Modal -->
+        <div id="adminModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Admin Panel</h2>
+                    <button id="closeModal" class="btn-close">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div id="pinSection">
+                        <h3>Skriv inn PIN-kode:</h3>
+                        <input type="password" id="pinInput" maxlength="4" placeholder="0000">
+                        <button id="submitPin" class="btn btn-primary">Logg inn</button>
+                    </div>
+                    <div id="adminPanel" class="hidden">
+                        <div class="admin-header">
+                            <h3>Admin Dashboard</h3>
+                            <div class="activity-counter">
+                                <small>Lagrede aktiviteter: <span id="activityCount">0</span></small>
+                            </div>
+                        </div>
+                        
+                        <!-- Admin Menu -->
+                        <div class="admin-menu">
+                            <button id="addActivityBtn" class="admin-menu-item active">
+                                <i class="fas fa-plus"></i>
+                                <span>Legg til ny aktivitet</span>
+                            </button>
+                            <button id="importCalendarBtn" class="admin-menu-item">
+                                <i class="fas fa-download"></i>
+                                <span>Last inn ekstern kalender</span>
+                            </button>
+                            <button id="checkDuplicatesBtn" class="admin-menu-item">
+                                <i class="fas fa-search"></i>
+                                <span>Sjekk for duplikater</span>
+                            </button>
+                        </div>
+                        
+                        <!-- Add Activity Panel -->
+                        <div id="addActivityPanel" class="admin-panel active">
+                            <h4>Legg til ny åpningstid</h4>
+                            <form id="addForm">
+                                <div class="form-group">
+                                    <label for="date">Dato:</label>
+                                    <input type="date" id="date" name="date" required lang="no" pattern="\d{4}-\d{2}-\d{2}">
+                                </div>
+                                <div class="form-group">
+                                    <label for="startTime">Start tid:</label>
+                                    <input type="time" id="startTime" name="startTime" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="endTime">Slutt tid:</label>
+                                    <input type="time" id="endTime" name="endTime" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Aktiviteter (velg en eller flere):</label>
+                                    <div class="activity-checkboxes">
+                                        <label class="activity-checkbox">
+                                            <input type="checkbox" name="activities" value="Åpen for alle">
+                                            <span class="color-dot" style="background-color: #FF6B6B;"></span>
+                                            Åpen for alle
+                                        </label>
+                                        <label class="activity-checkbox">
+                                            <input type="checkbox" name="activities" value="Jaktskyting">
+                                            <span class="color-dot" style="background-color: #3B82F6;"></span>
+                                            Jaktskyting
+                                        </label>
+                                        <label class="activity-checkbox">
+                                            <input type="checkbox" name="activities" value="DFS">
+                                            <span class="color-dot" style="background-color: #FFFFFF; border: 1px solid #ddd;"></span>
+                                            DFS
+                                        </label>
+                                        <label class="activity-checkbox">
+                                            <input type="checkbox" name="activities" value="Pistol">
+                                            <span class="color-dot" style="background-color: #F59E0B;"></span>
+                                            Pistol
+                                        </label>
+                                        <label class="activity-checkbox">
+                                            <input type="checkbox" name="activities" value="Storviltprøve">
+                                            <span class="color-dot" style="background-color: #10B981;"></span>
+                                            Storviltprøve
+                                        </label>
+                                        <label class="activity-checkbox">
+                                            <input type="checkbox" name="activities" value="Annet">
+                                            <span class="color-dot" style="background-color: #6B7280;"></span>
+                                            Annet
+                                        </label>
+                                        <label class="activity-checkbox">
+                                            <input type="checkbox" name="activities" value="Stevne">
+                                            <span class="color-dot" style="background-color: #8B5CF6;"></span>
+                                            Stevne
+                                        </label>
+                                        <label class="activity-checkbox">
+                                            <input type="checkbox" name="activities" value="Uavklart">
+                                            <span class="color-dot" style="background-color: #EF4444;"></span>
+                                            Uavklart
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="comment">Kommentar:</label>
+                                    <textarea id="comment" name="comment" rows="3"></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label for="rangeOfficer">Standsplassleder:</label>
+                                    <input type="text" id="rangeOfficer" name="rangeOfficer">
+                                </div>
+                                <div class="form-actions">
+                                    <button type="submit" class="btn btn-primary">Legg til</button>
+                                    <button type="button" id="deleteActivityBtn" class="btn btn-danger" style="display: none;">
+                                        <i class="fas fa-trash"></i> Slett aktivitet
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                        
+                        <!-- Import Calendar Panel -->
+                        <div id="importCalendarPanel" class="admin-panel">
+                            <h4>Last inn ekstern kalender</h4>
+                            <p>Hent aktiviteter fra Lorenskog Skytterlag's vaktplan-kalender.</p>
+                            <div class="import-info">
+                                <div class="info-item">
+                                    <i class="fas fa-calendar"></i>
+                                    <span>Kilde: Lorenskog Skytterlag Google Calendar</span>
+                                </div>
+                                <div class="info-item">
+                                    <i class="fas fa-clock"></i>
+                                    <span>Periode: 4.-11. august 2025</span>
+                                </div>
+                                <div class="info-item">
+                                    <i class="fas fa-map"></i>
+                                    <span>Mapping: Vaktplan → Aktivitetstyper</span>
+                                </div>
+                            </div>
+                            <button id="startImportBtn" class="btn btn-primary">
+                                <i class="fas fa-download"></i> Start import
+                            </button>
+                        </div>
+                        
+                        <!-- Check Duplicates Panel -->
+                        <div id="checkDuplicatesPanel" class="admin-panel">
+                            <h4>Sjekk for duplikater</h4>
+                            <p>Finn og fjern duplikate aktiviteter basert på dato og tid.</p>
+                            <div id="duplicatesResult" class="duplicates-result">
+                                <p>Klikk "Sjekk duplikater" for å analysere dataene.</p>
+                            </div>
+                            <button id="checkDuplicatesBtn" class="btn btn-secondary">
+                                <i class="fas fa-search"></i> Sjekk duplikater
+                            </button>
+                            <button id="removeDuplicatesBtn" class="btn btn-danger hidden">
+                                <i class="fas fa-trash"></i> Fjern duplikater
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html> 
