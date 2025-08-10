@@ -896,13 +896,14 @@ def extract_range_officer(summary):
     print(f"🔍 Backend extract_range_officer called with: {summary}")
     
     # Extract person name from summary (e.g., "Thomas Bogdahl - Standplassleder", "Jan-Erik Hansen - Standplassleder")
-    match = re.match(r'^(.+?)\s*-\s*', summary)
+    # Use non-greedy match to get everything up to the last " - "
+    match = re.match(r'^(.+?)\s*-\s*([^-]+)$', summary)
     if not match:
         print(f"❌ Backend: No match found for: {summary}")
         return 'Ikke satt'
     
     person_name = match.group(1).strip()
-    role = summary[match.end():].strip().lower()
+    role = match.group(2).strip().lower()
     
     print(f"📋 Backend: {summary} -> person: {person_name}, role: {role}")
     
