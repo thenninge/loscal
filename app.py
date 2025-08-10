@@ -39,26 +39,33 @@ else:
     DB_PATH = 'skytebane.db'
 
 def init_db():
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS activities (
-            id TEXT PRIMARY KEY,
-            iCalUID TEXT,
-            date TEXT NOT NULL,
-            dayOfWeek TEXT NOT NULL,
-            startTime TEXT NOT NULL,
-            endTime TEXT NOT NULL,
-            activities TEXT NOT NULL,
-            colors TEXT NOT NULL,
-            comment TEXT,
-            rangeOfficer TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
-    conn.commit()
-    conn.close()
+    """Initialize database - safe to call multiple times"""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS activities (
+                id TEXT PRIMARY KEY,
+                iCalUID TEXT,
+                date TEXT NOT NULL,
+                dayOfWeek TEXT NOT NULL,
+                startTime TEXT NOT NULL,
+                endTime TEXT NOT NULL,
+                activities TEXT NOT NULL,
+                colors TEXT NOT NULL,
+                comment TEXT,
+                rangeOfficer TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        conn.commit()
+        conn.close()
+        print(f"Database initialized successfully at {DB_PATH}")
+    except Exception as e:
+        print(f"Error initializing database: {str(e)}")
+        import traceback
+        traceback.print_exc()
 
 # Initialize database on startup
 init_db()
@@ -152,6 +159,10 @@ def static_files(filename):
 def get_activities():
     try:
         print("Get activities endpoint called")
+        
+        # Ensure database is initialized (safe for Vercel)
+        init_db()
+        
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
         cursor.execute('SELECT * FROM activities ORDER BY date, startTime')
@@ -196,6 +207,9 @@ def add_activity():
         if not data:
             print("No data received")
             return jsonify({'success': False, 'error': 'Ingen data mottatt'}), 400
+        
+        # Ensure database is initialized (safe for Vercel)
+        init_db()
         
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
