@@ -1155,12 +1155,6 @@ function updateActivityCounter() {
     if (counter) {
         counter.textContent = openingHours ? openingHours.length : 0;
     }
-    
-    // Also update the main activity counter
-    const mainCounter = document.getElementById('activityCountMain');
-    if (mainCounter) {
-        mainCounter.textContent = openingHours ? openingHours.length : 0;
-    }
 }
 
 
