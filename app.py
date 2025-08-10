@@ -213,11 +213,22 @@ def add_activity():
             return jsonify({'success': False, 'error': 'Ingen data mottatt'}), 400
         
         # Ensure database is initialized (safe for Vercel)
+        print("Initializing database...")
         init_db()
+        print("Database initialization completed")
         
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
         print("Database connection established")
+        
+        # Test if table exists after initialization
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='activities'")
+        table_exists = cursor.fetchone() is not None
+        print(f"Table 'activities' exists: {table_exists}")
+        
+        if not table_exists:
+            print("ERROR: Table does not exist after initialization!")
+            return jsonify({'success': False, 'error': 'Database table could not be created'}), 500
         
         cursor.execute('''
             INSERT OR REPLACE INTO activities 
@@ -341,6 +352,9 @@ def import_calendar():
             })
         
         # Save events to database
+        # Ensure database is initialized (safe for Vercel)
+        init_db()
+        
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
         
