@@ -108,6 +108,7 @@ def init_db():
                     colors JSONB NOT NULL,
                     comment TEXT,
                     rangeOfficer VARCHAR(255),
+                    source VARCHAR(20) DEFAULT 'manual',
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
@@ -126,6 +127,7 @@ def init_db():
                     colors TEXT NOT NULL,
                     comment TEXT,
                     rangeOfficer TEXT,
+                    source TEXT DEFAULT 'manual',
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
@@ -645,8 +647,8 @@ def import_calendar():
                     # PostgreSQL syntax
                     cursor.execute('''
                         INSERT INTO activities (id, date, dayOfWeek, startTime, endTime, 
-                                              activities, colors, comment, rangeOfficer, created_at, updated_at)
-                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                                              activities, colors, comment, rangeOfficer, source, created_at, updated_at)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
                         ON CONFLICT (id) DO UPDATE SET
                             date = EXCLUDED.date,
                             dayOfWeek = EXCLUDED.dayOfWeek,
@@ -656,6 +658,7 @@ def import_calendar():
                             colors = EXCLUDED.colors,
                             comment = EXCLUDED.comment,
                             rangeOfficer = EXCLUDED.rangeOfficer,
+                            source = EXCLUDED.source,
                             updated_at = CURRENT_TIMESTAMP
                     ''', (
                         event['id'],
@@ -666,14 +669,15 @@ def import_calendar():
                         json.dumps(event['activities']),
                         json.dumps(event['colors']),
                         event['comment'],
-                        event['rangeOfficer']
+                        event['rangeOfficer'],
+                        event['source']
                     ))
                 else:
                     # SQLite syntax
                     cursor.execute('''
                         INSERT OR REPLACE INTO activities (id, date, dayOfWeek, startTime, endTime, 
-                                              activities, colors, comment, rangeOfficer, created_at, updated_at)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                                              activities, colors, comment, rangeOfficer, source, created_at, updated_at)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
                     ''', (
                         event['id'],
                         event['date'],
@@ -683,7 +687,8 @@ def import_calendar():
                         json.dumps(event['activities']),
                         json.dumps(event['colors']),
                         event['comment'],
-                        event['rangeOfficer']
+                        event['rangeOfficer'],
+                        event['source']
                     ))
                 
                 # Check if this was an insert or update by checking if row was affected
@@ -873,7 +878,8 @@ def convert_event_to_activity(event, day_names, auto_categorize=True):
         'activities': activity_types,
         'colors': colors,
         'comment': f"Importert fra Lorenskog Skytterlag: {summary}",
-        'rangeOfficer': range_officer
+        'rangeOfficer': range_officer,
+        'source': 'imported'
     }
 
 def determine_activity_types(summary, day_of_week=None, auto_categorize=True):
@@ -1130,6 +1136,58 @@ def delete_all_activities():
         'success': True,
         'deleted_count': count,
         'message': f'Slettet alle {count} aktiviteter'
+    })
+
+@app.route('/api/activities/imported', methods=['DELETE', 'OPTIONS'])
+def delete_imported_activities():
+    if request.method == 'OPTIONS':
+        return '', 200
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': False, 'error': 'Database connection failed'}), 500
+        
+    cursor = conn.cursor()
+    
+    # Get count before deletion
+    cursor.execute('SELECT COUNT(*) FROM activities WHERE source = %s' if IS_VERCEL else 'SELECT COUNT(*) FROM activities WHERE source = ?', ('imported',))
+    count = cursor.fetchone()[0]
+    
+    # Delete imported activities
+    cursor.execute('DELETE FROM activities WHERE source = %s' if IS_VERCEL else 'DELETE FROM activities WHERE source = ?', ('imported',))
+    
+    conn.commit()
+    conn.close()
+    
+    return jsonify({
+        'success': True,
+        'deleted_count': count,
+        'message': f'Slettet {count} importerte aktiviteter'
+    })
+
+@app.route('/api/activities/manual', methods=['DELETE', 'OPTIONS'])
+def delete_manual_activities():
+    if request.method == 'OPTIONS':
+        return '', 200
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': False, 'error': 'Database connection failed'}), 500
+        
+    cursor = conn.cursor()
+    
+    # Get count before deletion
+    cursor.execute('SELECT COUNT(*) FROM activities WHERE source = %s' if IS_VERCEL else 'SELECT COUNT(*) FROM activities WHERE source = ?', ('manual',))
+    count = cursor.fetchone()[0]
+    
+    # Delete manual activities
+    cursor.execute('DELETE FROM activities WHERE source = %s' if IS_VERCEL else 'DELETE FROM activities WHERE source = ?', ('manual',))
+    
+    conn.commit()
+    conn.close()
+    
+    return jsonify({
+        'success': True,
+        'deleted_count': count,
+        'message': f'Slettet {count} manuelt opprettede aktiviteter'
     })
 
 if __name__ == '__main__':

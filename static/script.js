@@ -380,7 +380,7 @@ function setupEventListeners() {
     document.getElementById('deleteActivityBtn').addEventListener('click', async () => await deleteActivity());
     
     // Delete all activities button
-    document.getElementById('deleteAllActivitiesBtnMain').addEventListener('click', async () => await deleteAllActivities());
+    document.getElementById('deleteAllActivitiesBtnMain').addEventListener('click', showDeleteDialog);
     
     // Close admin modal button
     document.getElementById('closeAdminModalBtn').addEventListener('click', closeAdminModal);
@@ -1964,4 +1964,84 @@ style.textContent = `
         padding: 2rem;
     }
 `;
-document.head.appendChild(style); 
+document.head.appendChild(style);
+
+// Delete Dialog Functions
+function showDeleteDialog() {
+    const dialog = document.getElementById('deleteDialog');
+    dialog.classList.remove('hidden');
+    
+    // Add escape key listener
+    const handleEscape = (e) => {
+        if (e.key === 'Escape') {
+            closeDeleteDialog();
+            document.removeEventListener('keydown', handleEscape);
+        }
+    };
+    document.addEventListener('keydown', handleEscape);
+}
+
+function closeDeleteDialog() {
+    const dialog = document.getElementById('deleteDialog');
+    dialog.classList.add('hidden');
+}
+
+async function deleteImportedActivities() {
+    if (!confirm('Er du sikker på at du vil slette alle importerte aktiviteter?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/activities/imported', {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert(result.message);
+            closeDeleteDialog();
+            await loadData();
+            renderList();
+            renderCalendar();
+        } else {
+            alert('Feil ved sletting av importerte aktiviteter: ' + result.error);
+        }
+    } catch (error) {
+        console.error('Error deleting imported activities:', error);
+        alert('Feil ved sletting av importerte aktiviteter');
+    }
+}
+
+async function deleteManualActivities() {
+    if (!confirm('Er du sikker på at du vil slette alle manuelt opprettede aktiviteter?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/activities/manual', {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert(result.message);
+            closeDeleteDialog();
+            await loadData();
+            renderList();
+            renderCalendar();
+        } else {
+            alert('Feil ved sletting av manuelle aktiviteter: ' + result.error);
+        }
+    } catch (error) {
+        console.error('Error deleting manual activities:', error);
+        alert('Feil ved sletting av manuelle aktiviteter');
+    }
+} 
