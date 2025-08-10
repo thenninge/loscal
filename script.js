@@ -555,9 +555,45 @@ function showDayDetails(date) {
         year: '2-digit'
     });
     
-    alert(`${formattedDate}\n\n${events.map(event => 
-        `${event.startTime} - ${event.endTime}: ${event.activities.join(' + ')}\n${event.comment || ''}`
-    ).join('\n\n')}`);
+    // Create custom modal instead of alert
+    const modal = document.createElement('div');
+    modal.className = 'modal active';
+    modal.innerHTML = `
+        <div class="modal-content day-details-modal">
+            <div class="modal-header">
+                <h2>${formattedDate}</h2>
+                <button class="btn-close" onclick="this.closest('.modal').remove()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                ${events.map(event => `
+                    <div class="event-detail-item">
+                        <div class="event-info">
+                            <div class="event-time">${event.startTime} - ${event.endTime}</div>
+                            <div class="event-activities">${event.activities.join(' + ')}</div>
+                            ${event.comment ? `<div class="event-comment">${event.comment}</div>` : ''}
+                        </div>
+                        ${adminMode ? `
+                            <div class="event-actions">
+                                <button class="btn btn-edit" onclick="openEditModalById('${event.id}'); this.closest('.modal').remove();" title="Rediger">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-delete" onclick="deleteActivityById('${event.id}'); this.closest('.modal').remove();" title="Slett">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        ` : ''}
+                    </div>
+                `).join('')}
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="this.closest('.modal').remove()">Lukk</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
 }
 
 // Filtering
@@ -667,8 +703,6 @@ function showPinDialog() {
 }
 
 function createPinDialog() {
-    console.log('Creating PIN dialog...');
-    
     // Remove any existing PIN dialog first
     const existingDialog = document.getElementById('pinDialog');
     if (existingDialog) {
@@ -704,118 +738,43 @@ function createPinDialog() {
     `;
     document.body.appendChild(pinDialog);
     
-    // Wait a bit for DOM to be ready, then add event listeners
+    // Add event listeners
     setTimeout(() => {
         const pinInput = document.getElementById('pinInput');
-        console.log('PIN Input element after creation:', pinInput);
-        
         if (pinInput) {
             pinInput.addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') {
                     verifyPin();
                 }
             });
-            
-            // Test input functionality
-            pinInput.addEventListener('input', function(e) {
-                console.log('PIN Input changed:', e.target.value);
-            });
-            
-            pinInput.addEventListener('keydown', function(e) {
-                console.log('PIN Key pressed:', e.key);
-            });
-            
-            pinInput.addEventListener('focus', function(e) {
-                console.log('PIN Input focused');
-            });
-            
-            pinInput.addEventListener('blur', function(e) {
-                console.log('PIN Input blurred, value:', e.target.value);
-            });
-            
-            console.log('Event listener added to PIN input');
-        } else {
-            console.error('PIN input element not found after creation!');
         }
     }, 100);
 }
 
 function verifyPin() {
-    // Check for multiple elements with same ID
-    const allPinInputs = document.querySelectorAll('#pinInput');
-    console.log('Number of elements with id="pinInput":', allPinInputs.length);
-    
-    if (allPinInputs.length > 1) {
-        console.log('WARNING: Multiple elements with same ID found!');
-        allPinInputs.forEach((input, index) => {
-            console.log(`Input ${index}:`, input);
-            console.log(`Input ${index} value:`, input.value);
-            console.log(`Input ${index} type:`, input.type);
-        });
-    }
-    
     const pinInput = document.getElementById('pinInput');
-    
-    console.log('PIN Input element:', pinInput);
-    console.log('PIN Input value:', pinInput ? pinInput.value : 'Element not found');
-    console.log('PIN Input focused:', pinInput ? pinInput === document.activeElement : 'Element not found');
-    console.log('PIN Input type:', pinInput ? pinInput.type : 'Element not found');
     
     if (!pinInput) {
         console.error('PIN input element not found!');
         return;
     }
     
-    // Try multiple ways to read the value
-    console.log('=== MULTIPLE WAYS TO READ VALUE ===');
-    console.log('1. pinInput.value:', pinInput.value);
-    console.log('2. pinInput.getAttribute("value"):', pinInput.getAttribute('value'));
-    console.log('3. pinInput.defaultValue:', pinInput.defaultValue);
-    console.log('4. pinInput.textContent:', pinInput.textContent);
-    console.log('5. pinInput.innerText:', pinInput.innerText);
-    console.log('6. pinInput.innerHTML:', pinInput.innerHTML);
-    console.log('7. document.getElementById("pinInput").value:', document.getElementById('pinInput').value);
-    console.log('=====================================');
+    const enteredPin = pinInput.value;
+    const correctPin = '0406';
     
-    // Try to focus the input first
-    pinInput.focus();
-    
-    // Wait a moment and then read the value
-    setTimeout(() => {
-        console.log('About to read PIN value...');
-        console.log('PIN Input value before reading:', pinInput.value);
-        
-        const enteredPin = pinInput.value;
-        const correctPin = '0406';
-        
-        console.log('PIN Debug after focus:', {
-            enteredPin: enteredPin,
-            correctPin: correctPin,
-            enteredPinType: typeof enteredPin,
-            correctPinType: typeof correctPin,
-            enteredPinLength: enteredPin.length,
-            correctPinLength: correctPin.length,
-            isEqual: enteredPin === correctPin
-        });
-        
-        if (enteredPin === correctPin) {
-            console.log('PIN riktig! Åpner admin-panel...');
-            closePinDialog();
-            toggleAdminMode();
-            console.log('Clearing PIN input after success');
-            pinInput.value = ''; // Clear input
-        } else {
-            console.log('PIN feil! Viser feilmelding...');
-            console.log('Clearing PIN input after failure');
-            pinInput.value = ''; // Clear input
-            pinInput.placeholder = 'Feil PIN-kode!';
-            pinInput.style.borderColor = '#dc2626';
-            setTimeout(() => {
-                pinInput.placeholder = 'PIN-kode';
-                pinInput.style.borderColor = '';
-            }, 2000);
-        }
-    }, 100);
+    if (enteredPin === correctPin) {
+        closePinDialog();
+        toggleAdminMode();
+        pinInput.value = ''; // Clear input
+    } else {
+        pinInput.value = ''; // Clear input
+        pinInput.placeholder = 'Feil PIN-kode!';
+        pinInput.style.borderColor = '#dc2626';
+        setTimeout(() => {
+            pinInput.placeholder = 'PIN-kode';
+            pinInput.style.borderColor = '';
+        }, 2000);
+    }
 }
 
 

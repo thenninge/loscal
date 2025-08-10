@@ -822,6 +822,78 @@ body {
     color: #333;
 }
 
+/* Day Details Modal */
+.day-details-modal {
+    max-width: 600px;
+    width: 90%;
+}
+
+.event-detail-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 1rem;
+    border-bottom: 1px solid #e9ecef;
+    gap: 1rem;
+}
+
+.event-detail-item:last-child {
+    border-bottom: none;
+}
+
+.event-info {
+    flex: 1;
+}
+
+.event-time {
+    font-weight: bold;
+    color: #2c3e50;
+    margin-bottom: 0.25rem;
+}
+
+.event-activities {
+    color: #6c757d;
+    margin-bottom: 0.5rem;
+}
+
+.event-comment {
+    font-style: italic;
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+.event-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+
+.btn-edit {
+    background: #3498db;
+    color: white;
+    border: none;
+    padding: 0.5rem;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.btn-edit:hover {
+    background: #2980b9;
+}
+
+.btn-delete {
+    background: #e74c3c;
+    color: white;
+    border: none;
+    padding: 0.5rem;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.btn-delete:hover {
+    background: #c0392b;
+}
+
 /* PIN Dialog */
 .pin-dialog {
     max-width: 400px;
