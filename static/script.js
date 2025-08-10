@@ -442,9 +442,11 @@ function createListItem(item) {
         year: '2-digit'
     });
     
-    const activityBadges = item.activities.map((activity, index) => 
-        `<span class="activity-badge ${activity}" style="background-color: ${item.colors[index]}">${activity}</span>`
-    ).join('');
+    const activityBadges = item.activities.map((activity, index) => {
+        // Handle both string and array colors
+        const color = Array.isArray(item.colors) ? item.colors[index] : item.colors;
+        return `<span class="activity-badge ${activity}" style="background-color: ${color}">${activity}</span>`;
+    }).join('');
     
     // Only show admin buttons in admin mode
     const adminButtons = adminMode ? `
