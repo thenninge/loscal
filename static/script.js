@@ -1227,7 +1227,7 @@ function resetEditForm() {
 async function deleteActivity() {
     if (!window.editingActivity) return;
     
-    if (confirm('Er du sikker på at du vil slette denne aktiviteten?')) {
+    if (await showDeleteConfirmation()) {
         try {
             const response = await fetch(`/api/activities/${window.editingActivity.id}`, {
                 method: 'DELETE'
@@ -1270,7 +1270,7 @@ async function deleteActivity() {
 }
 
 async function deleteActivityById(activityId) {
-    if (!confirm('Er du sikker på at du vil slette denne aktiviteten?')) {
+    if (!await showDeleteConfirmation()) {
         return;
     }
     
@@ -1311,6 +1311,62 @@ async function deleteActivityById(activityId) {
         console.error('Error deleting activity:', error);
         alert('Feil ved sletting av aktivitet');
     }
+}
+
+function showDeleteConfirmation() {
+    return new Promise((resolve) => {
+        // Create modal overlay
+        const overlay = document.createElement('div');
+        overlay.className = 'delete-confirmation-overlay';
+        overlay.innerHTML = `
+            <div class="delete-confirmation-modal">
+                <div class="delete-confirmation-content">
+                    <h3>Slett aktivitet</h3>
+                    <p>Er du sikker på at du vil slette denne aktiviteten?</p>
+                    <div class="delete-confirmation-buttons">
+                        <button class="btn btn-secondary" id="cancelDelete">Avbryt</button>
+                        <button class="btn btn-danger" id="confirmDelete" autofocus>OK</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(overlay);
+        
+        // Focus on OK button by default
+        const okButton = overlay.querySelector('#confirmDelete');
+        okButton.focus();
+        
+        // Handle button clicks
+        overlay.querySelector('#confirmDelete').addEventListener('click', () => {
+            document.body.removeChild(overlay);
+            resolve(true);
+        });
+        
+        overlay.querySelector('#cancelDelete').addEventListener('click', () => {
+            document.body.removeChild(overlay);
+            resolve(false);
+        });
+        
+        // Handle escape key
+        const handleEscape = (e) => {
+            if (e.key === 'Escape') {
+                document.body.removeChild(overlay);
+                document.removeEventListener('keydown', handleEscape);
+                resolve(false);
+            }
+        };
+        document.addEventListener('keydown', handleEscape);
+        
+        // Handle click outside modal
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+                document.body.removeChild(overlay);
+                document.removeEventListener('keydown', handleEscape);
+                resolve(false);
+            }
+        });
+    });
 }
 
 function openEditModalById(activityId) {
