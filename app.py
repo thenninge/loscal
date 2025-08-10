@@ -912,7 +912,7 @@ def extract_range_officer(summary):
         print(f"✅ Backend: Setting range officer to: {person_name}")
         return person_name
     
-    print(f"❌ Backend: Role is not 'standplassleder', returning 'Ikke satt'")
+    print(f"❌ Backend: Role '{role}' is not 'standplassleder', returning 'Ikke satt' for: {summary}")
     return 'Ikke satt'
 
 def get_color_for_activity(activity_type):
