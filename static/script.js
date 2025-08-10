@@ -1171,7 +1171,20 @@ function getColorForActivity(activityType) {
 function extractRangeOfficer(summary) {
     // Extract person name from summary (e.g., "Thomas Bogdahl - Standplassleder")
     const match = summary.match(/^([^-]+)\s*-\s*/);
-    return match ? match[1].trim() : 'Ikke satt';
+    if (!match) {
+        return 'Ikke satt';
+    }
+    
+    const personName = match[1].trim();
+    const role = summary.substring(match[0].length).trim().toLowerCase();
+    
+    // Only set range officer if the role is "standplassleder"
+    // Don't set for "vakt standplass", "klargjøring", etc.
+    if (role === 'standplassleder') {
+        return personName;
+    }
+    
+    return 'Ikke satt';
 }
 
 // Admin Dashboard Functions
