@@ -699,11 +699,23 @@ function verifyPin() {
     const enteredPin = pinInput.value;
     const correctPin = '0406';
     
+    console.log('PIN Debug:', {
+        enteredPin: enteredPin,
+        correctPin: correctPin,
+        enteredPinType: typeof enteredPin,
+        correctPinType: typeof correctPin,
+        enteredPinLength: enteredPin.length,
+        correctPinLength: correctPin.length,
+        isEqual: enteredPin === correctPin
+    });
+    
     if (enteredPin === correctPin) {
+        console.log('PIN riktig! Åpner admin-panel...');
         closePinDialog();
         toggleAdminMode();
         pinInput.value = ''; // Clear input
     } else {
+        console.log('PIN feil! Viser feilmelding...');
         pinInput.value = ''; // Clear input
         pinInput.placeholder = 'Feil PIN-kode!';
         pinInput.style.borderColor = '#dc2626';
