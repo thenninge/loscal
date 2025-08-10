@@ -1222,24 +1222,13 @@ async function startImport() {
         
         console.log('startImport: About to show loading overlay...');
         
-        // Show loading overlay and close admin modal
-        console.log('startImport: Showing loading overlay...');
-        const loadingOverlay = document.getElementById('importLoadingOverlay');
-        console.log('startImport: Loading overlay element:', loadingOverlay);
-        if (loadingOverlay) {
-            loadingOverlay.classList.remove('hidden');
-            console.log('startImport: Loading overlay shown');
-            console.log('startImport: Loading overlay classes:', loadingOverlay.className);
-            console.log('startImport: Loading overlay display style:', window.getComputedStyle(loadingOverlay).display);
-            console.log('startImport: Loading overlay visibility:', window.getComputedStyle(loadingOverlay).visibility);
-            console.log('startImport: Loading overlay z-index:', window.getComputedStyle(loadingOverlay).zIndex);
-            
-            // Add a small delay to make the loading overlay more visible
-            await new Promise(resolve => setTimeout(resolve, 500));
-        } else {
-            console.log('startImport: Loading overlay element not found!');
-        }
-        closeAdminModal();
+            // Simple loading message
+    const importButton = document.querySelector('#importCalendarPanel button[type="submit"]');
+    const originalText = importButton.textContent;
+    importButton.textContent = 'Laster inn...';
+    importButton.disabled = true;
+    
+    closeAdminModal();
         
         const response = await fetch('/api/import/calendar', {
             method: 'POST',
@@ -1253,20 +1242,16 @@ async function startImport() {
             })
         });
         
-        // Hide loading overlay after response is received
-        console.log('startImport: Hiding loading overlay...');
-        if (loadingOverlay) {
-            loadingOverlay.classList.add('hidden');
-            console.log('startImport: Loading overlay hidden');
-        }
+        // Reset button
+        importButton.textContent = originalText;
+        importButton.disabled = false;
         
         if (response.ok) {
             const result = await response.json();
             console.log('startImport: Success response:', result);
             
-            // Show success message
-            const message = `Import fullført! ${result.imported_count} aktiviteter importert.`;
-            showMessage(message, 'success');
+            // Show simple success message
+            alert(`Ferdig! ${result.imported_count} aktiviteter importert.`);
             
             // Reload data
             console.log('startImport: Reloading data after import...');
@@ -1284,19 +1269,15 @@ async function startImport() {
         } else {
             const errorData = await response.json().catch(() => ({ error: 'Ukjent feil' }));
             console.error('Import error response:', errorData);
-            showMessage(`Feil ved import av kalender: ${errorData.error || 'Ukjent feil'}`, 'error');
+            alert(`Feil ved import av kalender: ${errorData.error || 'Ukjent feil'}`);
         }
     } catch (error) {
-        // Hide loading overlay on error
-        console.log('startImport: Error occurred, hiding loading overlay...');
-        const loadingOverlay = document.getElementById('importLoadingOverlay');
-        if (loadingOverlay) {
-            loadingOverlay.classList.add('hidden');
-            console.log('startImport: Loading overlay hidden due to error');
-        }
+        // Reset button on error
+        importButton.textContent = originalText;
+        importButton.disabled = false;
         
         console.error('Error importing calendar:', error);
-        showMessage(`Feil ved import av kalender: ${error.message}`, 'error');
+        alert(`Feil ved import av kalender: ${error.message}`);
     }
 }
 
@@ -1919,41 +1900,7 @@ function updateImportPeriodDisplay() {
     }
 }
 
-function showMessage(message, type = 'info') {
-    // Remove existing message
-    const existingMessage = document.getElementById('message-overlay');
-    if (existingMessage) {
-        existingMessage.remove();
-    }
-    
-    // Create message overlay
-    const messageOverlay = document.createElement('div');
-    messageOverlay.id = 'message-overlay';
-    messageOverlay.className = 'message-overlay';
-    
-    const messageContent = document.createElement('div');
-    messageContent.className = `message-content message-${type}`;
-    
-    const icon = document.createElement('i');
-    icon.className = type === 'success' ? 'fas fa-check-circle' : 
-                    type === 'error' ? 'fas fa-exclamation-circle' : 
-                    'fas fa-info-circle';
-    
-    const text = document.createElement('span');
-    text.textContent = message;
-    
-    messageContent.appendChild(icon);
-    messageContent.appendChild(text);
-    messageOverlay.appendChild(messageContent);
-    document.body.appendChild(messageOverlay);
-    
-    // Auto-remove after 5 seconds
-    setTimeout(() => {
-        if (messageOverlay.parentNode) {
-            messageOverlay.remove();
-        }
-    }, 5000);
-}
+
 
 // Add some CSS for calendar day headers
 const style = document.createElement('style');
