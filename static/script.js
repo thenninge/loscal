@@ -691,6 +691,8 @@ function showPinDialog() {
 }
 
 function createPinDialog() {
+    console.log('Creating PIN dialog...');
+    
     const pinDialog = document.createElement('div');
     pinDialog.id = 'pinDialog';
     pinDialog.className = 'modal';
@@ -716,12 +718,22 @@ function createPinDialog() {
     `;
     document.body.appendChild(pinDialog);
     
-    // Add event listeners
-    document.getElementById('pinInput').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            verifyPin();
+    // Wait a bit for DOM to be ready, then add event listeners
+    setTimeout(() => {
+        const pinInput = document.getElementById('pinInput');
+        console.log('PIN Input element after creation:', pinInput);
+        
+        if (pinInput) {
+            pinInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    verifyPin();
+                }
+            });
+            console.log('Event listener added to PIN input');
+        } else {
+            console.error('PIN input element not found after creation!');
         }
-    });
+    }, 100);
 }
 
 function verifyPin() {
