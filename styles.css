@@ -844,7 +844,8 @@ body {
     }
     
     .filter-checkboxes {
-        flex-direction: column;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
         gap: 0.5rem;
         max-height: 0;
         opacity: 0;
@@ -898,6 +899,12 @@ body {
 }
 
 @media (max-width: 480px) {
+    .filter-checkboxes {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.5rem;
+    }
+    
     .calendar-day {
         min-height: 60px;
         font-size: 0.8rem;
