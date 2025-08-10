@@ -712,6 +712,7 @@ function createPinDialog() {
                 <div class="form-actions">
                     <button type="button" class="btn btn-secondary" onclick="closePinDialog()">Avbryt</button>
                     <button type="button" class="btn btn-primary" onclick="verifyPin()">OK</button>
+                    <button type="button" class="btn btn-warning" onclick="testPinInput()">Test Input</button>
                 </div>
             </div>
         </div>
@@ -788,6 +789,26 @@ function verifyPin() {
             }, 2000);
         }
     }, 100);
+}
+
+function testPinInput() {
+    const pinInput = document.getElementById('pinInput');
+    console.log('=== TESTING PIN INPUT ===');
+    console.log('Input element:', pinInput);
+    console.log('Input value:', pinInput ? pinInput.value : 'Element not found');
+    console.log('Input focused:', pinInput ? pinInput === document.activeElement : 'Element not found');
+    console.log('Input disabled:', pinInput ? pinInput.disabled : 'Element not found');
+    console.log('Input readonly:', pinInput ? pinInput.readOnly : 'Element not found');
+    console.log('Input type:', pinInput ? pinInput.type : 'Element not found');
+    console.log('Input maxlength:', pinInput ? pinInput.maxLength : 'Element not found');
+    console.log('=======================');
+    
+    // Try to set a test value
+    if (pinInput) {
+        pinInput.value = '1234';
+        console.log('Set test value "1234"');
+        console.log('New input value:', pinInput.value);
+    }
 }
 
 function closePinDialog() {
