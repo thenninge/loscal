@@ -342,9 +342,11 @@ body {
     color: #dc2626;
 }
 
-.list-item.Jaktskyting { border-left-color: #3B82F6; }
+.list-item.Jeger { border-left-color: #3B82F6; }
 .list-item.DFS { border-left-color: #FFFFFF; }
 .list-item.Pistol { border-left-color: #F59E0B; }
+.list-item.PRS { border-left-color: #8B5CF6; }
+.list-item.Leirdue { border-left-color: #EC4899; }
 .list-item.Storviltprøve { border-left-color: #10B981; }
 .list-item.Uavklart { border-left-color: #EF4444; }
 
@@ -455,9 +457,11 @@ body {
     color: white;
 }
 
-.activity-badge.Jaktskyting { background: #3B82F6; }
+.activity-badge.Jeger { background: #3B82F6; }
 .activity-badge.DFS { background: #FFFFFF; color: #333; border: 1px solid #ddd; }
 .activity-badge.Pistol { background: #F59E0B; }
+.activity-badge.PRS { background: #8B5CF6; }
+.activity-badge.Leirdue { background: #EC4899; }
 .activity-badge.Storviltprøve { background: #10B981; }
 .activity-badge.Uavklart { background: #EF4444; }
 

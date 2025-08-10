@@ -149,18 +149,12 @@ def delete_activity(activity_id):
 @app.route('/api/import/calendar', methods=['POST'])
 def import_calendar():
     try:
-        print("Import calendar endpoint called")
         # Get date range from request
         data = request.get_json()
-        print("Request data:", data)
         from_date = data.get('from_date')
         to_date = data.get('to_date')
         
-        print("From date:", from_date)
-        print("To date:", to_date)
-        
         if not from_date or not to_date:
-            print("Missing date parameters")
             return jsonify({
                 'success': False,
                 'error': 'Fra- og til-dato må være spesifisert'
@@ -296,9 +290,12 @@ def convert_event_to_activity(event, day_names):
     start_dt = event['start']
     end_dt = event.get('end', start_dt + timedelta(hours=1))
     
-    # Determine activity types based on summary
+    # Get day of week
+    day_of_week = day_names[(start_dt.weekday()) % 7]
+    
+    # Determine activity types based on summary and day of week
     summary = event['summary']
-    activity_types = determine_activity_types(summary)
+    activity_types = determine_activity_types(summary, day_of_week)
     if not activity_types:
         return None  # Skip maintenance events
     
@@ -320,8 +317,8 @@ def convert_event_to_activity(event, day_names):
         'rangeOfficer': range_officer
     }
 
-def determine_activity_types(summary):
-    """Determine activity types from summary - can return multiple types"""
+def determine_activity_types(summary, day_of_week=None):
+    """Determine activity types from summary and day of week - can return multiple types"""
     summary_lower = summary.lower()
     activities = []
     
@@ -340,23 +337,40 @@ def determine_activity_types(summary):
         activities.append('Uavklart')
         # Don't return early - continue to check for other activity types
     
-    # Check other activity types
+    # Check specific activity types from summary
     if 'jaktskyting' in summary_lower or 'jakt' in summary_lower:
-        activities.append('Jaktskyting')
+        activities.append('Jeger')  # Changed from Jaktskyting to Jeger
     if 'dfs' in summary_lower:
         activities.append('DFS')
     if 'pistol' in summary_lower:
         activities.append('Pistol')
+    if 'prs' in summary_lower:
+        activities.append('PRS')
+    if 'leirdue' in summary_lower:
+        activities.append('Leirdue')
     if 'storviltprøve' in summary_lower or 'storvilt' in summary_lower:
         activities.append('Storviltprøve')
-    if 'baneskyting' in summary_lower or 'bane' in summary_lower:
-        activities.append('Baneskyting')
     if '100m' in summary_lower or '100 m' in summary_lower:
         activities.append('100m')
     if '200m' in summary_lower or '200 m' in summary_lower:
         activities.append('200m')
     
-    # If no specific activities found, add 'Annet'
+    # Auto-categorize based on day of week if no specific activities found
+    if day_of_week and len(activities) == 0:
+        day_activities = {
+            'Mandag': ['DFS', '100m', '200m'],
+            'Tirsdag': ['Pistol', '100m'],
+            'Onsdag': ['PRS', '200m'],
+            'Torsdag': ['Jeger', '100m', '200m'],
+            'Fredag': ['Leirdue'],
+            'Lørdag': ['Åpen for alle', '100m', '200m'],
+            'Søndag': []  # No default activities for Sunday
+        }
+        
+        if day_of_week in day_activities:
+            activities.extend(day_activities[day_of_week])
+    
+    # If still no activities found, add 'Annet'
     if len(activities) == 0:
         activities.append('Annet')
     
@@ -381,10 +395,12 @@ def extract_range_officer(summary):
 def get_color_for_activity(activity_type):
     """Get color for activity type"""
     colors = {
-        'Baneskyting': '#EF4444',
-        'Jaktskyting': '#3B82F6',
+        'Åpen for alle': '#FF6B6B',
+        'Jeger': '#3B82F6',
         'DFS': '#FFFFFF',
         'Pistol': '#F59E0B',
+        'PRS': '#8B5CF6',
+        'Leirdue': '#EC4899',
         'Storviltprøve': '#10B981',
         'Annet': '#6B7280',
         'Uavklart': '#EF4444',
