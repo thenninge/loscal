@@ -276,10 +276,7 @@ body {
     box-shadow: 0 2px 8px rgba(0,0,0,0.05);
     transition: all 0.2s ease;
     border-left: 4px solid;
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 1rem;
+    position: relative;
 }
 
 .list-item:hover {
@@ -356,7 +353,7 @@ body {
 .list-item.Annet { border-left-color: #6B7280; }
 
 .item-content {
-    flex: 1;
+    width: 100%;
 }
 
 .item-header {
@@ -386,8 +383,10 @@ body {
     display: flex;
     gap: 0.5rem;
     align-items: center;
-    flex-shrink: 0;
-    margin-top: 0.5rem;
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    z-index: 10;
 }
 
 .edit-btn {
@@ -887,8 +886,6 @@ body {
     
     .list-item {
         padding: 1rem;
-        flex-direction: column;
-        gap: 0.5rem;
     }
     
     .item-header {
@@ -898,8 +895,8 @@ body {
     }
     
     .admin-buttons {
-        align-self: flex-end;
-        margin-top: 0;
+        top: 0.25rem;
+        right: 0.25rem;
     }
     
     .calendar-grid {

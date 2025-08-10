@@ -303,7 +303,12 @@ def determine_activity_types(summary):
     activities = []
     
     # Skip maintenance events
-    if any(word in summary_lower for word in ['opplåsing', 'klargjøring', 'låsing', 'åpning', 'stengning']):
+    maintenance_words = [
+        'opplåsing', 'klargjøring', 'låsing', 'åpning', 'stengning',
+        'låse opp', 'låse ned', 'åpne', 'stenge', 'lukke',
+        'klargjør', 'klargjøre', 'opplås', 'lås opp', 'lås ned'
+    ]
+    if any(word in summary_lower for word in maintenance_words):
         return []
     
     # Check for "Ledig" or "Ikke satt" - mark as Udefinert
@@ -402,6 +407,37 @@ def remove_duplicates():
     conn.close()
     
     return jsonify({'success': True})
+
+@app.route('/api/cleanup/maintenance', methods=['DELETE'])
+def cleanup_maintenance_events():
+    """Remove maintenance events from database"""
+    conn = sqlite3.connect('skytebane.db')
+    cursor = conn.cursor()
+    
+    # Get all activities
+    cursor.execute('SELECT id, comment FROM activities')
+    activities = cursor.fetchall()
+    
+    maintenance_words = [
+        'opplåsing', 'klargjøring', 'låsing', 'åpning', 'stengning',
+        'låse opp', 'låse ned', 'åpne', 'stenge', 'lukke',
+        'klargjør', 'klargjøre', 'opplås', 'lås opp', 'lås ned'
+    ]
+    
+    deleted_count = 0
+    for activity_id, comment in activities:
+        if comment and any(word in comment.lower() for word in maintenance_words):
+            cursor.execute('DELETE FROM activities WHERE id = ?', (activity_id,))
+            deleted_count += 1
+    
+    conn.commit()
+    conn.close()
+    
+    return jsonify({
+        'success': True,
+        'deleted_count': deleted_count,
+        'message': f'Fjernet {deleted_count} vedlikeholdsevents'
+    })
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=8000) 

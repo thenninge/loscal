@@ -455,6 +455,7 @@ function createListItem(item) {
     
     return `
         <div class="list-item ${item.activities[0]}" data-id="${item.id}">
+            ${adminButtons}
             <div class="item-content">
                 <div class="item-header">
                     <div class="item-date">${formattedDate} (${item.dayOfWeek})</div>
@@ -468,7 +469,6 @@ function createListItem(item) {
                 </div>
                 ${item.comment ? `<div class="item-comment">${item.comment}</div>` : ''}
             </div>
-            ${adminButtons}
         </div>
     `;
 }
@@ -510,22 +510,16 @@ function renderCalendar() {
                               String(date.getDate()).padStart(2, '0');
             const isToday = date.toDateString() === new Date().toDateString();
             
-            // Filter events to only show future activities
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            const dayEvents = openingHours.filter(item => {
-                if (item.date !== dateString) return false;
-                const activityDate = new Date(item.date);
-                activityDate.setHours(0, 0, 0, 0);
-                return activityDate >= today;
-            });
+            // Get filtered data and filter by date
+            const filteredData = getFilteredData();
+            const dayEvents = filteredData.filter(item => item.date === dateString);
             
             html += `
                 <div class="calendar-day ${isToday ? 'today' : ''}" data-date="${dateString}">
                     <div class="day-number">${day}</div>
                     <div class="day-events">
                         ${dayEvents.map(event => `
-                            <div class="day-event" style="background: linear-gradient(45deg, ${event.colors.join(', ')})">
+                            <div class="day-event" style="background-color: ${event.colors}">
                                 ${event.startTime} ${event.activities.join(' + ')}
                             </div>
                         `).join('')}
@@ -553,7 +547,8 @@ function renderCalendar() {
 }
 
 function showDayDetails(date) {
-    const events = openingHours.filter(item => item.date === date);
+    const filteredData = getFilteredData();
+    const events = filteredData.filter(item => item.date === date);
     if (events.length === 0) return;
     
     const formattedDate = new Date(date).toLocaleDateString('no-NO', {
@@ -1225,6 +1220,18 @@ async function deleteActivity() {
                 method: 'DELETE'
             });
             
+            console.log('Delete response status:', response.status);
+            console.log('Delete response ok:', response.ok);
+            
+            // Try to parse JSON, but don't fail if it's not JSON
+            let data = null;
+            try {
+                data = await response.json();
+                console.log('Delete response data:', data);
+            } catch (jsonError) {
+                console.log('Response is not JSON, treating as success if status is ok');
+            }
+            
             if (response.ok) {
                 // Remove from local data
                 const activityIndex = openingHours.findIndex(a => a.id === window.editingActivity.id);
@@ -1258,6 +1265,18 @@ async function deleteActivityById(activityId) {
         const response = await fetch(`/api/activities/${activityId}`, {
             method: 'DELETE'
         });
+        
+        console.log('Delete response status:', response.status);
+        console.log('Delete response ok:', response.ok);
+        
+        // Try to parse JSON, but don't fail if it's not JSON
+        let data = null;
+        try {
+            data = await response.json();
+            console.log('Delete response data:', data);
+        } catch (jsonError) {
+            console.log('Response is not JSON, treating as success if status is ok');
+        }
         
         if (response.ok) {
             // Remove from local array
