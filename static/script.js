@@ -1200,6 +1200,10 @@ function switchAdminPanel(panelId) {
 }
 
 async function startImport() {
+    // Define variables at function scope so they're available in catch block
+    let importButton = null;
+    let originalText = '';
+    
     try {
         console.log('startImport called');
         console.log('startImport: About to get form elements...');
@@ -1222,13 +1226,13 @@ async function startImport() {
         
         console.log('startImport: About to show loading overlay...');
         
-            // Simple loading message
-    const importButton = document.querySelector('#importCalendarPanel button[type="submit"]');
-    const originalText = importButton.textContent;
-    importButton.textContent = 'Laster inn...';
-    importButton.disabled = true;
-    
-    closeAdminModal();
+        // Simple loading message
+        importButton = document.querySelector('#importCalendarPanel button[type="submit"]');
+        originalText = importButton.textContent;
+        importButton.textContent = 'Laster inn...';
+        importButton.disabled = true;
+        
+        closeAdminModal();
         
         const response = await fetch('/api/import/calendar', {
             method: 'POST',
@@ -1273,8 +1277,10 @@ async function startImport() {
         }
     } catch (error) {
         // Reset button on error
-        importButton.textContent = originalText;
-        importButton.disabled = false;
+        if (importButton) {
+            importButton.textContent = originalText;
+            importButton.disabled = false;
+        }
         
         console.error('Error importing calendar:', error);
         alert(`Feil ved import av kalender: ${error.message}`);
