@@ -1233,6 +1233,9 @@ async function startImport() {
             console.log('startImport: Loading overlay display style:', window.getComputedStyle(loadingOverlay).display);
             console.log('startImport: Loading overlay visibility:', window.getComputedStyle(loadingOverlay).visibility);
             console.log('startImport: Loading overlay z-index:', window.getComputedStyle(loadingOverlay).zIndex);
+            
+            // Add a small delay to make the loading overlay more visible
+            await new Promise(resolve => setTimeout(resolve, 500));
         } else {
             console.log('startImport: Loading overlay element not found!');
         }
