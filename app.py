@@ -10,8 +10,9 @@ from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 import pickle
 import os.path
-import pg8000
-from pg8000 import Connection
+# Import pg8000 only when needed (Vercel)
+pg8000 = None
+RealDictCursor = None
 
 app = Flask(__name__)
 
@@ -35,6 +36,12 @@ IS_VERCEL = os.environ.get('VERCEL') == '1'
 def get_db_connection():
     """Get database connection"""
     if IS_VERCEL:
+        # Import pg8000 dynamically for Vercel
+        global pg8000, RealDictCursor
+        if pg8000 is None:
+            import pg8000
+            from pg8000.extras import RealDictCursor
+        
         # Supabase PostgreSQL connection (with connection pooling for Vercel)
         DATABASE_URL = "postgresql://postgres.toofqfonichtzexpuvzc:sauer200STR!!@aws-0-eu-north-1.pooler.supabase.com:6543/postgres"
         
@@ -247,6 +254,10 @@ def get_activities():
             return jsonify({'success': False, 'error': 'Database connection failed'}), 500
             
         if IS_VERCEL:
+            # Import RealDictCursor dynamically
+            global RealDictCursor
+            if RealDictCursor is None:
+                from pg8000.extras import RealDictCursor
             cursor = conn.cursor(cursor_factory=RealDictCursor)
             cursor.execute('SELECT * FROM activities ORDER BY date, startTime')
             rows = cursor.fetchall()
