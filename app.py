@@ -14,12 +14,32 @@ import os.path
 
 app = Flask(__name__)
 
+# Add CORS headers for Vercel
+@app.after_request
+def after_request(response):
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    return response
+
 # Google Calendar API setup
 SCOPES = ['https://www.googleapis.com/auth/calendar.readonly']
 
 # Database setup
+import os
+
+# Check if we're running on Vercel (no persistent filesystem)
+IS_VERCEL = os.environ.get('VERCEL') == '1'
+
+if IS_VERCEL:
+    # Use in-memory database for Vercel
+    DB_PATH = ':memory:'
+else:
+    # Use file-based database for local development
+    DB_PATH = 'skytebane.db'
+
 def init_db():
-    conn = sqlite3.connect('skytebane.db')
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS activities (
@@ -47,6 +67,10 @@ init_db()
 def index():
     return render_template('index.html')
 
+@app.route('/api/activities', methods=['OPTIONS'])
+def handle_options():
+    return '', 200
+
 @app.route('/static/<path:filename>')
 def static_files(filename):
     return send_from_directory('static', filename)
@@ -54,7 +78,7 @@ def static_files(filename):
 # API Endpoints
 @app.route('/api/activities', methods=['GET'])
 def get_activities():
-    conn = sqlite3.connect('skytebane.db')
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute('SELECT * FROM activities ORDER BY date, startTime')
     rows = cursor.fetchall()
@@ -75,13 +99,18 @@ def get_activities():
             'rangeOfficer': row[9]
         })
     
+    # Return empty list if no activities found - database starts blank
+    # Data will be added through import functionality
+    
     return jsonify(activities)
 
-@app.route('/api/activities', methods=['POST'])
+@app.route('/api/activities', methods=['POST', 'OPTIONS'])
 def add_activity():
+    if request.method == 'OPTIONS':
+        return '', 200
     data = request.json
     
-    conn = sqlite3.connect('skytebane.db')
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     
     cursor.execute('''
@@ -106,11 +135,13 @@ def add_activity():
     
     return jsonify({'success': True, 'id': data['id']})
 
-@app.route('/api/activities/<activity_id>', methods=['PUT'])
+@app.route('/api/activities/<activity_id>', methods=['PUT', 'OPTIONS'])
 def update_activity(activity_id):
+    if request.method == 'OPTIONS':
+        return '', 200
     data = request.json
     
-    conn = sqlite3.connect('skytebane.db')
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     
     cursor.execute('''
@@ -136,9 +167,11 @@ def update_activity(activity_id):
     
     return jsonify({'success': True})
 
-@app.route('/api/activities/<activity_id>', methods=['DELETE'])
+@app.route('/api/activities/<activity_id>', methods=['DELETE', 'OPTIONS'])
 def delete_activity(activity_id):
-    conn = sqlite3.connect('skytebane.db')
+    if request.method == 'OPTIONS':
+        return '', 200
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute('DELETE FROM activities WHERE id = ?', (activity_id,))
     conn.commit()
@@ -146,8 +179,10 @@ def delete_activity(activity_id):
     
     return jsonify({'success': True})
 
-@app.route('/api/import/calendar', methods=['POST'])
+@app.route('/api/import/calendar', methods=['POST', 'OPTIONS'])
 def import_calendar():
+    if request.method == 'OPTIONS':
+        return '', 200
     try:
         # Get date range and auto-categorize setting from request
         data = request.get_json()
@@ -180,7 +215,7 @@ def import_calendar():
             })
         
         # Save events to database
-        conn = sqlite3.connect('skytebane.db')
+        conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
         
         imported_count = 0
@@ -439,9 +474,11 @@ def get_color_for_activity(activity_type):
     }
     return colors.get(activity_type, '#6B7280')
 
-@app.route('/api/duplicates', methods=['GET'])
+@app.route('/api/duplicates', methods=['GET', 'OPTIONS'])
 def check_duplicates():
-    conn = sqlite3.connect('skytebane.db')
+    if request.method == 'OPTIONS':
+        return '', 200
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute('''
         SELECT date, startTime, endTime, COUNT(*) as count
@@ -463,9 +500,11 @@ def check_duplicates():
         ]
     })
 
-@app.route('/api/duplicates', methods=['DELETE'])
+@app.route('/api/duplicates', methods=['DELETE', 'OPTIONS'])
 def remove_duplicates():
-    conn = sqlite3.connect('skytebane.db')
+    if request.method == 'OPTIONS':
+        return '', 200
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     
     # Find and remove duplicates, keeping only the first occurrence
@@ -483,10 +522,12 @@ def remove_duplicates():
     
     return jsonify({'success': True})
 
-@app.route('/api/cleanup/maintenance', methods=['DELETE'])
+@app.route('/api/cleanup/maintenance', methods=['DELETE', 'OPTIONS'])
 def cleanup_maintenance_events():
+    if request.method == 'OPTIONS':
+        return '', 200
     """Remove maintenance events from database"""
-    conn = sqlite3.connect('skytebane.db')
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     
     # Get all activities
@@ -522,10 +563,12 @@ def cleanup_maintenance_events():
         'message': f'Fjernet {deleted_count} vedlikeholdsevents'
     })
 
-@app.route('/api/activities/all', methods=['DELETE'])
+@app.route('/api/activities/all', methods=['DELETE', 'OPTIONS'])
 def delete_all_activities():
+    if request.method == 'OPTIONS':
+        return '', 200
     """Delete all activities from database"""
-    conn = sqlite3.connect('skytebane.db')
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     
     # Get count before deletion

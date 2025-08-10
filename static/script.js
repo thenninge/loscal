@@ -221,17 +221,19 @@ async function loadData() {
                 openingHours = data;
                 // Migrate "Ledig" to "Uavklart" in existing data
                 migrateLedigToUavklart();
+                console.log('Loaded existing data from database:', data.length, 'activities');
             } else {
-                // No data in database, use defaults
-                openingHours = getDefaultData();
+                // No data in database - start with empty array
+                openingHours = [];
+                console.log('Database is empty - starting with blank slate');
             }
         } else {
-            console.log('Error loading data from API, using defaults');
-            openingHours = getDefaultData();
+            console.log('Error loading data from API, starting with empty array');
+            openingHours = [];
         }
     } catch (error) {
-        console.log('Error loading data from API, using defaults:', error);
-        openingHours = getDefaultData();
+        console.log('Error loading data from API, starting with empty array:', error);
+        openingHours = [];
     }
     
     console.log('Loaded data:', openingHours);
@@ -307,8 +309,14 @@ function setupEventListeners() {
         setupTimeInputs(); // Setup time inputs for 24-hour format
     });
     document.getElementById('importCalendarBtn').addEventListener('click', async () => {
+        console.log('Import calendar button clicked');
         switchAdminPanel('importCalendarPanel');
+        console.log('Switched to import panel');
         setupImportDateDefaults();
+        console.log('Setup import date defaults called');
+        
+        // Update activity counter to show/hide empty database message
+        updateActivityCounter();
     });
     document.getElementById('checkDuplicatesBtn').addEventListener('click', async () => {
         switchAdminPanel('checkDuplicatesPanel');
@@ -417,6 +425,17 @@ function renderList() {
     const filteredData = getFilteredData();
     const activeFilters = Array.from(document.querySelectorAll('.filter-item input:checked'))
         .map(checkbox => checkbox.value);
+    
+    // Check if database is completely empty
+    if (!openingHours || openingHours.length === 0) {
+        container.innerHTML = `
+            <div class="no-data">
+                <p>Ingen aktiviteter i databasen ennå.</p>
+                <p>Bruk "Last inn ekstern kalender" i admin-panelet for å importere aktiviteter.</p>
+            </div>
+        `;
+        return;
+    }
     
     // Get today's date for comparison
     const today = new Date();
@@ -538,7 +557,7 @@ function renderCalendar() {
             
             // Get filtered data and filter by date
             const filteredData = getFilteredData();
-            const dayEvents = filteredData.filter(item => item.date === dateString);
+            const dayEvents = filteredData ? filteredData.filter(item => item.date === dateString) : [];
             
             html += `
                 <div class="calendar-day ${isToday ? 'today' : ''}" data-date="${dateString}">
@@ -574,6 +593,8 @@ function renderCalendar() {
 
 function showDayDetails(date) {
     const filteredData = getFilteredData();
+    if (!filteredData || filteredData.length === 0) return;
+    
     const events = filteredData.filter(item => item.date === date);
     if (events.length === 0) return;
     
@@ -626,6 +647,11 @@ function showDayDetails(date) {
 
 // Filtering
 function getFilteredData() {
+    // Handle empty database
+    if (!openingHours || openingHours.length === 0) {
+        return [];
+    }
+    
     const activeFilters = Array.from(document.querySelectorAll('.filter-item input:checked'))
         .map(checkbox => checkbox.value);
     
@@ -1114,6 +1140,8 @@ function extractRangeOfficer(summary) {
 
 // Admin Dashboard Functions
 function switchAdminPanel(panelId) {
+    console.log('switchAdminPanel called with:', panelId);
+    
     // Update menu items
     document.querySelectorAll('.admin-menu-item').forEach(item => {
         item.classList.remove('active');
@@ -1125,7 +1153,13 @@ function switchAdminPanel(panelId) {
     });
     
     // Activate selected panel and menu item
-    document.getElementById(panelId).classList.add('active');
+    const panel = document.getElementById(panelId);
+    console.log('Found panel:', panel);
+    if (panel) {
+        panel.classList.add('active');
+    } else {
+        console.error('Panel not found:', panelId);
+    }
     
     // Find and activate corresponding menu item
     const menuItemMap = {
@@ -1136,15 +1170,30 @@ function switchAdminPanel(panelId) {
     
     const menuItemId = menuItemMap[panelId];
     if (menuItemId) {
-        document.getElementById(menuItemId).classList.add('active');
+        const menuItem = document.getElementById(menuItemId);
+        console.log('Found menu item:', menuItem);
+        if (menuItem) {
+            menuItem.classList.add('active');
+        } else {
+            console.error('Menu item not found:', menuItemId);
+        }
     }
 }
 
 async function startImport() {
     try {
-        const fromDate = document.getElementById('importFromDate').value;
-        const toDate = document.getElementById('importToDate').value;
-        const autoCategorize = document.getElementById('autoCategorizeCheckbox').checked;
+        console.log('startImport called');
+        const fromDateElement = document.getElementById('importFromDate');
+        const toDateElement = document.getElementById('importToDate');
+        const autoCategorizeElement = document.getElementById('autoCategorizeCheckbox');
+        
+        console.log('Found elements:', { fromDateElement, toDateElement, autoCategorizeElement });
+        
+        const fromDate = fromDateElement ? fromDateElement.value : '';
+        const toDate = toDateElement ? toDateElement.value : '';
+        const autoCategorize = autoCategorizeElement ? autoCategorizeElement.checked : false;
+        
+        console.log('Values:', { fromDate, toDate, autoCategorize });
         
         if (!fromDate || !toDate) {
             alert('Vennligst velg både fra- og til-dato');
@@ -1172,6 +1221,12 @@ async function startImport() {
             renderList();
             renderCalendar();
             updateActivityCounter();
+            
+            // Update empty database message
+            const emptyMessage = document.getElementById('emptyDatabaseMessage');
+            if (emptyMessage) {
+                emptyMessage.style.display = 'none';
+            }
         } else {
             alert('Feil ved import av kalender');
         }
@@ -1249,6 +1304,8 @@ async function removeDuplicates() {
 function updateActivityCounter() {
     const count = openingHours ? openingHours.length : 0;
     
+    console.log('Updating activity counter to:', count);
+    
     const counter = document.getElementById('activityCount');
     if (counter) {
         counter.textContent = count;
@@ -1258,6 +1315,16 @@ function updateActivityCounter() {
     const mainCounter = document.getElementById('activityCountMain');
     if (mainCounter) {
         mainCounter.textContent = count;
+    }
+    
+    // Show/hide empty database message in import panel
+    const emptyMessage = document.getElementById('emptyDatabaseMessage');
+    if (emptyMessage) {
+        if (count === 0) {
+            emptyMessage.style.display = 'block';
+        } else {
+            emptyMessage.style.display = 'none';
+        }
     }
 }
 
@@ -1696,19 +1763,30 @@ function formatTime(time) {
 }
 
 function setupImportDateDefaults() {
+    console.log('setupImportDateDefaults called');
     const today = new Date();
     const fromDate = document.getElementById('importFromDate');
     const toDate = document.getElementById('importToDate');
     
+    console.log('Found fromDate element:', fromDate);
+    console.log('Found toDate element:', toDate);
+    
+    if (!fromDate || !toDate) {
+        console.error('Date input elements not found!');
+        return;
+    }
+    
     // Set default from date to today
     const todayString = today.toISOString().split('T')[0];
     fromDate.value = todayString;
+    console.log('Set fromDate to:', todayString);
     
     // Set default to date to 7 days from today
     const toDateObj = new Date(today);
     toDateObj.setDate(today.getDate() + 7);
     const toDateString = toDateObj.toISOString().split('T')[0];
     toDate.value = toDateString;
+    console.log('Set toDate to:', toDateString);
     
     // Update period display
     updateImportPeriodDisplay();
@@ -1716,6 +1794,7 @@ function setupImportDateDefaults() {
     // Add event listeners to update display when dates change
     fromDate.addEventListener('change', updateImportPeriodDisplay);
     toDate.addEventListener('change', updateImportPeriodDisplay);
+    console.log('Added event listeners to date inputs');
 }
 
 function setupTimeInputs() {
@@ -1744,20 +1823,33 @@ function setupTimeInputs() {
 }
 
 function updateImportPeriodDisplay() {
+    console.log('updateImportPeriodDisplay called');
     const fromDate = document.getElementById('importFromDate');
     const toDate = document.getElementById('importToDate');
     const display = document.getElementById('importPeriodDisplay');
     
-    if (fromDate.value && toDate.value) {
+    console.log('Found elements:', { fromDate, toDate, display });
+    
+    if (fromDate && toDate && fromDate.value && toDate.value) {
         const from = new Date(fromDate.value);
         const to = new Date(toDate.value);
         
         const fromFormatted = from.toLocaleDateString('no-NO', { day: '2-digit', month: '2-digit', year: 'numeric' });
         const toFormatted = to.toLocaleDateString('no-NO', { day: '2-digit', month: '2-digit', year: 'numeric' });
         
-        display.textContent = `${fromFormatted} - ${toFormatted}`;
+        if (display) {
+            display.textContent = `${fromFormatted} - ${toFormatted}`;
+            console.log('Updated display to:', display.textContent);
+        } else {
+            console.error('Display element not found');
+        }
     } else {
-        display.textContent = 'Velg periode';
+        if (display) {
+            display.textContent = 'Velg periode';
+            console.log('Set display to default text');
+        } else {
+            console.error('Display element not found');
+        }
     }
 }
 
