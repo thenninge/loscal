@@ -934,7 +934,7 @@ function prefillEditForm(activity) {
     const deleteBtn = document.getElementById('deleteActivityBtn');
     
     if (formTitle) formTitle.textContent = 'Rediger aktivitet';
-    if (submitBtn) submitBtn.textContent = 'Oppdater aktivitet';
+    if (submitBtn) submitBtn.textContent = 'Lagre';
     if (deleteBtn) deleteBtn.style.display = 'inline-block';
 }
 
