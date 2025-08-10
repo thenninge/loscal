@@ -711,40 +711,47 @@ function verifyPin() {
     
     console.log('PIN Input element:', pinInput);
     console.log('PIN Input value:', pinInput ? pinInput.value : 'Element not found');
+    console.log('PIN Input focused:', pinInput ? pinInput === document.activeElement : 'Element not found');
     
     if (!pinInput) {
         console.error('PIN input element not found!');
         return;
     }
     
-    const enteredPin = pinInput.value;
-    const correctPin = '0406';
+    // Try to focus the input first
+    pinInput.focus();
     
-    console.log('PIN Debug:', {
-        enteredPin: enteredPin,
-        correctPin: correctPin,
-        enteredPinType: typeof enteredPin,
-        correctPinType: typeof correctPin,
-        enteredPinLength: enteredPin.length,
-        correctPinLength: correctPin.length,
-        isEqual: enteredPin === correctPin
-    });
-    
-    if (enteredPin === correctPin) {
-        console.log('PIN riktig! Åpner admin-panel...');
-        closePinDialog();
-        toggleAdminMode();
-        pinInput.value = ''; // Clear input
-    } else {
-        console.log('PIN feil! Viser feilmelding...');
-        pinInput.value = ''; // Clear input
-        pinInput.placeholder = 'Feil PIN-kode!';
-        pinInput.style.borderColor = '#dc2626';
-        setTimeout(() => {
-            pinInput.placeholder = 'PIN-kode';
-            pinInput.style.borderColor = '';
-        }, 2000);
-    }
+    // Wait a moment and then read the value
+    setTimeout(() => {
+        const enteredPin = pinInput.value;
+        const correctPin = '0406';
+        
+        console.log('PIN Debug after focus:', {
+            enteredPin: enteredPin,
+            correctPin: correctPin,
+            enteredPinType: typeof enteredPin,
+            correctPinType: typeof correctPin,
+            enteredPinLength: enteredPin.length,
+            correctPinLength: correctPin.length,
+            isEqual: enteredPin === correctPin
+        });
+        
+        if (enteredPin === correctPin) {
+            console.log('PIN riktig! Åpner admin-panel...');
+            closePinDialog();
+            toggleAdminMode();
+            pinInput.value = ''; // Clear input
+        } else {
+            console.log('PIN feil! Viser feilmelding...');
+            pinInput.value = ''; // Clear input
+            pinInput.placeholder = 'Feil PIN-kode!';
+            pinInput.style.borderColor = '#dc2626';
+            setTimeout(() => {
+                pinInput.placeholder = 'PIN-kode';
+                pinInput.style.borderColor = '';
+            }, 2000);
+        }
+    }, 100);
 }
 
 function closePinDialog() {
