@@ -32,8 +32,8 @@ import os
 IS_VERCEL = os.environ.get('VERCEL') == '1'
 
 if IS_VERCEL:
-    # Use in-memory database for Vercel
-    DB_PATH = ':memory:'
+    # Use temporary file database for Vercel (more reliable than in-memory)
+    DB_PATH = '/tmp/skytebane.db'
 else:
     # Use file-based database for local development
     DB_PATH = 'skytebane.db'
