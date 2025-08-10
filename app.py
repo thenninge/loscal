@@ -45,6 +45,8 @@ def get_db_connection():
         host_port_db = parts[1].split('/')
         host_port = host_port_db[0].split(':')
         
+        print(f"Connecting to database: {host_port[0]}:{host_port[1]}")
+        
         conn = pg8000.Connection(
             user=user_pass[0],
             password=user_pass[1],
@@ -52,9 +54,13 @@ def get_db_connection():
             port=int(host_port[1]),
             database=host_port_db[1]
         )
+        print("Database connection successful")
         return conn
     except Exception as e:
         print(f"Database connection error: {str(e)}")
+        print(f"Error type: {type(e)}")
+        import traceback
+        traceback.print_exc()
         return None
 
 def init_db():
@@ -451,11 +457,20 @@ def import_calendar():
             
         except Exception as e:
             # Rollback on error
-            conn.rollback()
+            try:
+                conn.rollback()
+            except:
+                pass  # Ignore rollback errors
             print(f"Database error during import: {str(e)}")
+            print(f"Error type: {type(e)}")
+            import traceback
+            traceback.print_exc()
             raise e
         finally:
-            conn.close()
+            try:
+                conn.close()
+            except:
+                pass  # Ignore close errors
         
         message_parts = []
         if imported_count > 0:
