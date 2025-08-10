@@ -379,6 +379,40 @@
                                 </button>
                             </div>
                         </div>
+
+                        <!-- Delete Activities Panel -->
+                        <div id="deleteActivitiesPanel" class="admin-panel">
+                            <h4>Slett aktiviteter</h4>
+                            <p>Velg hvilke aktiviteter du vil slette fra databasen.</p>
+                            <div class="delete-options">
+                                <button class="delete-option" onclick="deleteAllActivities()">
+                                    <i class="fas fa-trash-alt"></i>
+                                    <div class="delete-option-text">
+                                        <strong>Slett alle aktiviteter</strong>
+                                        <small>Fjerner alle aktiviteter fra databasen</small>
+                                    </div>
+                                </button>
+                                <button class="delete-option" onclick="deleteImportedActivities()">
+                                    <i class="fas fa-download"></i>
+                                    <div class="delete-option-text">
+                                        <strong>Slett alle importerte</strong>
+                                        <small>Fjerner kun aktiviteter importert fra kalender</small>
+                                    </div>
+                                </button>
+                                <button class="delete-option" onclick="deleteManualActivities()">
+                                    <i class="fas fa-edit"></i>
+                                    <div class="delete-option-text">
+                                        <strong>Slett alle manuelt lagt til</strong>
+                                        <small>Fjerner kun manuelt opprettede aktiviteter</small>
+                                    </div>
+                                </button>
+                            </div>
+                            <div class="form-actions">
+                                <button type="button" class="btn btn-secondary" onclick="closeAdminModal()">
+                                    <i class="fas fa-times"></i> Lukk
+                                </button>
+                            </div>
+                        </div>
                         
 
                     </div>
@@ -386,48 +420,7 @@
             </div>
         </div>
 
-        <!-- Delete Activities Dialog -->
-        <div id="deleteDialog" class="modal-overlay hidden">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3><i class="fas fa-trash-alt"></i> Slett aktiviteter</h3>
-                    <button class="modal-close" onclick="closeDeleteDialog()">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <p>Velg hvilke aktiviteter du vil slette:</p>
-                    <div class="delete-options">
-                        <button class="delete-option" onclick="deleteAllActivities()">
-                            <i class="fas fa-trash-alt"></i>
-                            <div class="delete-option-text">
-                                <strong>Slett alle aktiviteter</strong>
-                                <small>Fjerner alle aktiviteter fra databasen</small>
-                            </div>
-                        </button>
-                        <button class="delete-option" onclick="deleteImportedActivities()">
-                            <i class="fas fa-download"></i>
-                            <div class="delete-option-text">
-                                <strong>Slett alle importerte</strong>
-                                <small>Fjerner kun aktiviteter importert fra kalender</small>
-                            </div>
-                        </button>
-                        <button class="delete-option" onclick="deleteManualActivities()">
-                            <i class="fas fa-edit"></i>
-                            <div class="delete-option-text">
-                                <strong>Slett alle manuelt lagt til</strong>
-                                <small>Fjerner kun manuelt opprettede aktiviteter</small>
-                            </div>
-                        </button>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-secondary" onclick="closeDeleteDialog()">
-                        <i class="fas fa-times"></i> Avbryt
-                    </button>
-                </div>
-            </div>
-        </div>
+
 
     </div>
 

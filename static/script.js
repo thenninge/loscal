@@ -380,7 +380,7 @@ function setupEventListeners() {
     document.getElementById('deleteActivityBtn').addEventListener('click', async () => await deleteActivity());
     
     // Delete all activities button
-    document.getElementById('deleteAllActivitiesBtnMain').addEventListener('click', showDeleteDialog);
+    document.getElementById('deleteAllActivitiesBtnMain').addEventListener('click', () => switchAdminPanel('deleteActivitiesPanel'));
     
     // Close admin modal button
     document.getElementById('closeAdminModalBtn').addEventListener('click', closeAdminModal);
@@ -1966,25 +1966,7 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
-// Delete Dialog Functions
-function showDeleteDialog() {
-    const dialog = document.getElementById('deleteDialog');
-    dialog.classList.remove('hidden');
-    
-    // Add escape key listener
-    const handleEscape = (e) => {
-        if (e.key === 'Escape') {
-            closeDeleteDialog();
-            document.removeEventListener('keydown', handleEscape);
-        }
-    };
-    document.addEventListener('keydown', handleEscape);
-}
 
-function closeDeleteDialog() {
-    const dialog = document.getElementById('deleteDialog');
-    dialog.classList.add('hidden');
-}
 
 async function deleteImportedActivities() {
     if (!confirm('Er du sikker på at du vil slette alle importerte aktiviteter?')) {
@@ -2003,7 +1985,7 @@ async function deleteImportedActivities() {
         
         if (result.success) {
             alert(result.message);
-            closeDeleteDialog();
+            closeAdminModal();
             await loadData();
             renderList();
             renderCalendar();
@@ -2033,7 +2015,7 @@ async function deleteManualActivities() {
         
         if (result.success) {
             alert(result.message);
-            closeDeleteDialog();
+            closeAdminModal();
             await loadData();
             renderList();
             renderCalendar();
