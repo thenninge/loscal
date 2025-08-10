@@ -189,8 +189,48 @@ def get_activities():
                 'rangeOfficer': row[9]
             })
         
-        # Return empty list if no activities found - database starts blank
-        # Data will be added through import functionality
+                # If no activities found and we're on Vercel, add some test data
+        if not activities and IS_VERCEL:
+            print("Adding test activities for Vercel")
+            test_activities = [
+                {
+                    'id': 'test-1',
+                    'date': '2025-01-20',
+                    'dayOfWeek': 'Mandag',
+                    'startTime': '09:00',
+                    'endTime': '17:00',
+                    'activities': ['Jeger'],
+                    'colors': ['#228B22'],
+                    'comment': 'Test-aktivitet: Jegerskyting mandag',
+                    'rangeOfficer': 'Test Person 1'
+                },
+                {
+                    'id': 'test-2',
+                    'date': '2025-01-21',
+                    'dayOfWeek': 'Tirsdag',
+                    'startTime': '10:00',
+                    'endTime': '16:00',
+                    'activities': ['DFS'],
+                    'colors': ['#FFFFFF'],
+                    'comment': 'Test-aktivitet: DFS trening tirsdag',
+                    'rangeOfficer': 'Test Person 2'
+                },
+                {
+                    'id': 'test-3',
+                    'date': '2025-01-22',
+                    'dayOfWeek': 'Onsdag',
+                    'startTime': '14:00',
+                    'endTime': '20:00',
+                    'activities': ['Pistol'],
+                    'colors': ['#F59E0B'],
+                    'comment': 'Test-aktivitet: Pistolskyting onsdag',
+                    'rangeOfficer': 'Test Person 3'
+                }
+            ]
+            activities = test_activities
+            print(f"Added {len(test_activities)} test activities")
+        else:
+            print("No test activities added - using existing data")
         
         return jsonify(activities)
     except Exception as e:
