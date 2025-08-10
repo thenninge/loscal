@@ -33,7 +33,7 @@ import os
 IS_VERCEL = os.environ.get('VERCEL') == '1'
 
 # Supabase PostgreSQL connection (with connection pooling for Vercel)
-DATABASE_URL = "postgresql://postgres.toofqfonichtzexpuvzc:[YOUR-PASSWORD]@aws-0-eu-north-1.pooler.supabase.com:6543/postgres"
+DATABASE_URL = "postgresql://postgres.toofqfonichtzexpuvzc:sauer200STR!!@aws-0-eu-north-1.pooler.supabase.com:6543/postgres"
 
 def get_db_connection():
     """Get database connection"""
