@@ -362,10 +362,11 @@ body {
 
 .item-header {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    flex-direction: column;
+    align-items: flex-start;
     margin-bottom: 0.5rem;
     position: relative;
+    gap: 0.5rem;
 }
 
 .item-date {
