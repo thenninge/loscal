@@ -1248,7 +1248,6 @@ async function removeDuplicates() {
 
 function updateActivityCounter() {
     const count = openingHours ? openingHours.length : 0;
-    console.log('updateActivityCounter called, count:', count, 'openingHours:', openingHours);
     
     const counter = document.getElementById('activityCount');
     if (counter) {
@@ -1259,9 +1258,6 @@ function updateActivityCounter() {
     const mainCounter = document.getElementById('activityCountMain');
     if (mainCounter) {
         mainCounter.textContent = count;
-        console.log('Updated main counter to:', count);
-    } else {
-        console.log('Main counter element not found');
     }
 }
 
