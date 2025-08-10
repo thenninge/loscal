@@ -340,7 +340,6 @@ function setupEventListeners() {
     document.getElementById('deleteActivityBtn').addEventListener('click', async () => await deleteActivity());
     
     // Delete all activities button
-    document.getElementById('deleteAllActivitiesBtn').addEventListener('click', async () => await deleteAllActivities());
     document.getElementById('deleteAllActivitiesBtnMain').addEventListener('click', async () => await deleteAllActivities());
     
     // Filter checkboxes
