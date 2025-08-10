@@ -699,6 +699,12 @@ function createPinDialog() {
                     verifyPin();
                 }
             });
+            
+            // Test input functionality
+            pinInput.addEventListener('input', function(e) {
+                console.log('PIN Input changed:', e.target.value);
+            });
+            
             console.log('Event listener added to PIN input');
         } else {
             console.error('PIN input element not found after creation!');
