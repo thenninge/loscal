@@ -835,6 +835,8 @@ function updateUIForAdminMode() {
         // Show activity counter in main view
         if (activityCounterMain) {
             activityCounterMain.classList.remove('hidden');
+            // Update the counter when showing it
+            updateActivityCounter();
         }
     } else {
         adminControls.classList.add('hidden');
