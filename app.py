@@ -275,8 +275,8 @@ def get_activities():
                     'dayOfWeek': row['dayofweek'],
                     'startTime': row['starttime'],
                     'endTime': row['endtime'],
-                    'activities': row['activities'],
-                    'colors': row['colors'],
+                    'activities': json.loads(row['activities']) if isinstance(row['activities'], str) else row['activities'],
+                    'colors': json.loads(row['colors']) if isinstance(row['colors'], str) else row['colors'],
                     'comment': row['comment'],
                     'rangeOfficer': row['rangeofficer']
                 })
