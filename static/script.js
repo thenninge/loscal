@@ -1122,24 +1122,29 @@ function determineActivityType(summary) {
         return 'Uavklart';
     }
     
-    // Map vaktplan terms to our activity types
+    // If we have a range officer assigned, categorize based on the role/activity
+    if (summaryLower.includes('standplassleder')) {
+        return 'Jeger'; // Standplassleder indicates hunting activity
+    }
+    if (summaryLower.includes('vakt standplass')) {
+        return 'Jeger'; // Range duty indicates hunting activity
+    }
     if (summaryLower.includes('klargjøring') || summaryLower.includes('låse opp')) {
         return 'Storviltprøve';
     }
-    if (summaryLower.includes('standplassleder')) {
-        return 'Jaktskyting';
-    }
-    if (summaryLower.includes('vakt standplass')) {
-        return 'Jaktskyting';
-    }
     if (summaryLower.includes('avslutte') || summaryLower.includes('låse')) {
-        return 'Jaktskyting';
+        return 'Jeger';
     }
     if (summaryLower.includes('ledig') || summaryLower.includes('fri')) {
         return 'Uavklart';
     }
     if (summaryLower.includes('åpen') || summaryLower.includes('åpent') || summaryLower.includes('for alle')) {
         return 'Åpen for alle';
+    }
+    
+    // If we have a range officer but can't determine specific activity, default to Jeger
+    if (rangeOfficer !== 'Ikke satt') {
+        return 'Jeger';
     }
     
     // Default fallback
