@@ -1227,7 +1227,7 @@ async function startImport() {
             })
         });
         
-        // Hide loading overlay
+        // Hide loading overlay after response is received
         if (loadingOverlay) {
             loadingOverlay.classList.add('hidden');
         }
