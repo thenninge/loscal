@@ -943,6 +943,25 @@ body {
     box-shadow: 0 0 0 2px #3498db;
 }
 
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    margin-bottom: 0.5rem;
+}
+
+.checkbox-label input[type="checkbox"] {
+    margin-right: 0.5rem;
+    width: auto;
+}
+
+.form-help {
+    display: block;
+    color: #666;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+
 /* Utility */
 .hidden {
     display: none !important;

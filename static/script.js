@@ -976,6 +976,7 @@ async function startImport() {
     try {
         const fromDate = document.getElementById('importFromDate').value;
         const toDate = document.getElementById('importToDate').value;
+        const autoCategorize = document.getElementById('autoCategorizeCheckbox').checked;
         
         if (!fromDate || !toDate) {
             alert('Vennligst velg både fra- og til-dato');
@@ -989,7 +990,8 @@ async function startImport() {
             },
             body: JSON.stringify({
                 from_date: fromDate,
-                to_date: toDate
+                to_date: toDate,
+                auto_categorize: autoCategorize
             })
         });
         

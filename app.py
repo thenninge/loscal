@@ -149,10 +149,11 @@ def delete_activity(activity_id):
 @app.route('/api/import/calendar', methods=['POST'])
 def import_calendar():
     try:
-        # Get date range from request
+        # Get date range and auto-categorize setting from request
         data = request.get_json()
         from_date = data.get('from_date')
         to_date = data.get('to_date')
+        auto_categorize = data.get('auto_categorize', True)  # Default to True for backward compatibility
         
         if not from_date or not to_date:
             return jsonify({
@@ -169,7 +170,7 @@ def import_calendar():
         
         # Parse iCal data
         ical_data = response.text
-        events = parse_ical_data(ical_data, from_date, to_date)
+        events = parse_ical_data(ical_data, from_date, to_date, auto_categorize)
         
         if not events:
             return jsonify({
@@ -228,7 +229,7 @@ def import_calendar():
             'error': f'Feil ved import: {str(e)}'
         }), 500
 
-def parse_ical_data(ical_content, from_date=None, to_date=None):
+def parse_ical_data(ical_content, from_date=None, to_date=None, auto_categorize=True):
     """Parse iCal data and convert to activities"""
     events = []
     current_event = {}
@@ -295,7 +296,7 @@ def convert_event_to_activity(event, day_names):
     
     # Determine activity types based on summary and day of week
     summary = event['summary']
-    activity_types = determine_activity_types(summary, day_of_week)
+    activity_types = determine_activity_types(summary, day_of_week, auto_categorize)
     if not activity_types:
         return None  # Skip maintenance events
     
@@ -317,7 +318,7 @@ def convert_event_to_activity(event, day_names):
         'rangeOfficer': range_officer
     }
 
-def determine_activity_types(summary, day_of_week=None):
+def determine_activity_types(summary, day_of_week=None, auto_categorize=True):
     """Determine activity types from summary and day of week - can return multiple types"""
     summary_lower = summary.lower()
     activities = []
@@ -355,8 +356,8 @@ def determine_activity_types(summary, day_of_week=None):
     if '200m' in summary_lower or '200 m' in summary_lower:
         activities.append('200m')
     
-    # Auto-categorize based on day of week if no specific activities found (excluding Uavklart)
-    if day_of_week and len([a for a in activities if a != 'Uavklart']) == 0:
+    # Auto-categorize based on day of week if no specific activities found (excluding Uavklart) and auto_categorize is enabled
+    if auto_categorize and day_of_week and len([a for a in activities if a != 'Uavklart']) == 0:
         day_activities = {
             'Mandag': ['DFS', '100m', '200m'],
             'Tirsdag': ['Pistol', '100m'],
