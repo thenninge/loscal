@@ -247,7 +247,7 @@ def parse_ical_data(ical_content, from_date=None, to_date=None, auto_categorize=
         elif line.startswith('END:VEVENT'):
             if current_event and 'summary' in current_event:
                 # Convert to activity format
-                activity = convert_event_to_activity(current_event, day_names)
+                activity = convert_event_to_activity(current_event, day_names, auto_categorize)
                 if activity:
                     # Filter by date range if specified
                     if from_date and to_date:
@@ -283,7 +283,7 @@ def parse_ical_datetime(dt_string):
     except:
         return None
 
-def convert_event_to_activity(event, day_names):
+def convert_event_to_activity(event, day_names, auto_categorize=True):
     """Convert iCal event to activity format"""
     if not event.get('start') or not event.get('summary'):
         return None
