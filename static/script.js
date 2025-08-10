@@ -690,10 +690,22 @@ function getFilteredData() {
         return futureActivities;
     }
     
+    // Check if "Utelat udefinert" filter is active
+    const excludeUndefined = activeFilters.includes('Utelat udefinert');
+    
     // Apply activity type filters to future activities
-    return futureActivities.filter(item => 
+    let filteredActivities = futureActivities.filter(item => 
         item.activities.some(activity => activeFilters.includes(activity))
     );
+    
+    // If "Utelat udefinert" is active, filter out items that contain "Uavklart"
+    if (excludeUndefined) {
+        filteredActivities = filteredActivities.filter(item => 
+            !item.activities.includes('Uavklart')
+        );
+    }
+    
+    return filteredActivities;
 }
 
 function filterData() {
