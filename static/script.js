@@ -281,6 +281,7 @@ function setupEventListeners() {
         document.getElementById('adminPanel').classList.remove('hidden');
         switchAdminPanel('addActivityPanel');
         resetEditForm(); // Clear form for new activity
+        setupTimeInputs(); // Setup time inputs for 24-hour format
         updateActivityCounter();
     });
     
@@ -303,6 +304,7 @@ function setupEventListeners() {
     document.getElementById('addActivityBtn').addEventListener('click', async () => {
         switchAdminPanel('addActivityPanel');
         resetEditForm(); // Clear form for new activity
+        setupTimeInputs(); // Setup time inputs for 24-hour format
     });
     document.getElementById('importCalendarBtn').addEventListener('click', async () => {
         switchAdminPanel('importCalendarPanel');
@@ -1537,6 +1539,45 @@ function setupImportDateDefaults() {
     // Add event listeners to update display when dates change
     fromDate.addEventListener('change', updateImportPeriodDisplay);
     toDate.addEventListener('change', updateImportPeriodDisplay);
+}
+
+function setupTimeInputs() {
+    const startTimeInput = document.getElementById('startTime');
+    const endTimeInput = document.getElementById('endTime');
+    
+    if (startTimeInput) {
+        startTimeInput.addEventListener('input', function() {
+            // Force 24-hour format
+            const time = this.value;
+            if (time) {
+                const [hours, minutes] = time.split(':');
+                const hour24 = parseInt(hours);
+                if (hour24 >= 0 && hour24 <= 23) {
+                    this.value = `${hours.padStart(2, '0')}:${minutes}`;
+                }
+            }
+        });
+        
+        // Set placeholder to show 24-hour format
+        startTimeInput.placeholder = '14:30';
+    }
+    
+    if (endTimeInput) {
+        endTimeInput.addEventListener('input', function() {
+            // Force 24-hour format
+            const time = this.value;
+            if (time) {
+                const [hours, minutes] = time.split(':');
+                const hour24 = parseInt(hours);
+                if (hour24 >= 0 && hour24 <= 23) {
+                    this.value = `${hours.padStart(2, '0')}:${minutes}`;
+                }
+            }
+        });
+        
+        // Set placeholder to show 24-hour format
+        endTimeInput.placeholder = '16:00';
+    }
 }
 
 function updateImportPeriodDisplay() {
