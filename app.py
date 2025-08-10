@@ -1,5 +1,4 @@
 from flask import Flask, render_template, request, jsonify, send_from_directory
-import sqlite3
 import json
 import os
 import re
@@ -11,6 +10,8 @@ from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 import pickle
 import os.path
+import psycopg2
+from psycopg2.extras import RealDictCursor
 
 app = Flask(__name__)
 
@@ -28,42 +29,49 @@ SCOPES = ['https://www.googleapis.com/auth/calendar.readonly']
 # Database setup
 import os
 
-# Check if we're running on Vercel (no persistent filesystem)
+# Check if we're running on Vercel
 IS_VERCEL = os.environ.get('VERCEL') == '1'
 
-if IS_VERCEL:
-    # Use temporary file database for Vercel (shared within the same serverless instance)
-    DB_PATH = '/tmp/skytebane.db'
-    print("Using temporary file database for Vercel")
-else:
-    # Use file-based database for local development
-    DB_PATH = 'skytebane.db'
-    print("Using file-based database for local development")
+# Supabase PostgreSQL connection
+DATABASE_URL = "postgresql://postgres:[YOUR-PASSWORD]@db.toofqfonichtzexpuvzc.supabase.co:5432/postgres"
+
+def get_db_connection():
+    """Get database connection"""
+    try:
+        conn = psycopg2.connect(DATABASE_URL)
+        return conn
+    except Exception as e:
+        print(f"Database connection error: {str(e)}")
+        return None
 
 def init_db():
     """Initialize database - safe to call multiple times"""
     try:
-        conn = sqlite3.connect(DB_PATH)
+        conn = get_db_connection()
+        if not conn:
+            print("Could not connect to database")
+            return
+            
         cursor = conn.cursor()
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS activities (
-                id TEXT PRIMARY KEY,
-                iCalUID TEXT,
-                date TEXT NOT NULL,
-                dayOfWeek TEXT NOT NULL,
-                startTime TEXT NOT NULL,
-                endTime TEXT NOT NULL,
-                activities TEXT NOT NULL,
-                colors TEXT NOT NULL,
+                id VARCHAR(255) PRIMARY KEY,
+                iCalUID VARCHAR(255),
+                date VARCHAR(10) NOT NULL,
+                dayOfWeek VARCHAR(20) NOT NULL,
+                startTime VARCHAR(5) NOT NULL,
+                endTime VARCHAR(5) NOT NULL,
+                activities JSONB NOT NULL,
+                colors JSONB NOT NULL,
                 comment TEXT,
-                rangeOfficer TEXT,
+                rangeOfficer VARCHAR(255),
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         ''')
         conn.commit()
         conn.close()
-        print(f"Database initialized successfully at {DB_PATH}")
+        print("Database initialized successfully")
     except Exception as e:
         print(f"Error initializing database: {str(e)}")
         import traceback
@@ -115,24 +123,32 @@ def debug_database():
     try:
         print("Debug database endpoint called")
         
-        # Ensure database is initialized (safe for Vercel)
+        # Ensure database is initialized
         init_db()
         
-        conn = sqlite3.connect(DB_PATH)
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({
+                'database_type': 'Supabase PostgreSQL',
+                'is_vercel': IS_VERCEL,
+                'error': 'Database connection failed',
+                'status': 'Database connection failed'
+            })
+            
         cursor = conn.cursor()
         
         # Test if table exists
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='activities'")
-        table_exists = cursor.fetchone() is not None
+        cursor.execute("SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'activities')")
+        table_exists = cursor.fetchone()[0]
         
-        # Test if we can write (without actually writing)
+        # Test if we can read
         cursor.execute("SELECT COUNT(*) FROM activities")
         count = cursor.fetchone()[0]
         
         conn.close()
         
         return jsonify({
-            'database_path': DB_PATH,
+            'database_type': 'Supabase PostgreSQL',
             'is_vercel': IS_VERCEL,
             'table_exists': table_exists,
             'activity_count': count,
@@ -143,7 +159,7 @@ def debug_database():
         import traceback
         traceback.print_exc()
         return jsonify({
-            'database_path': DB_PATH,
+            'database_type': 'Supabase PostgreSQL',
             'is_vercel': IS_VERCEL,
             'error': str(e),
             'status': 'Database connection failed'
@@ -166,11 +182,14 @@ def get_activities():
     try:
         print("Get activities endpoint called")
         
-        # Ensure database is initialized (safe for Vercel)
+        # Ensure database is initialized
         init_db()
         
-        conn = sqlite3.connect(DB_PATH)
-        cursor = conn.cursor()
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({'success': False, 'error': 'Database connection failed'}), 500
+            
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
         cursor.execute('SELECT * FROM activities ORDER BY date, startTime')
         rows = cursor.fetchall()
         conn.close()
@@ -179,16 +198,16 @@ def get_activities():
         activities = []
         for row in rows:
             activities.append({
-                'id': row[0],
-                'iCalUID': row[1],
-                'date': row[2],
-                'dayOfWeek': row[3],
-                'startTime': row[4],
-                'endTime': row[5],
-                'activities': json.loads(row[6]),
-                'colors': json.loads(row[7]),
-                'comment': row[8],
-                'rangeOfficer': row[9]
+                'id': row['id'],
+                'iCalUID': row['icaluid'],
+                'date': row['date'],
+                'dayOfWeek': row['dayofweek'],
+                'startTime': row['starttime'],
+                'endTime': row['endtime'],
+                'activities': row['activities'],
+                'colors': row['colors'],
+                'comment': row['comment'],
+                'rangeOfficer': row['rangeofficer']
             })
         
         print(f"Returning {len(activities)} activities from database")
@@ -213,28 +232,33 @@ def add_activity():
             print("No data received")
             return jsonify({'success': False, 'error': 'Ingen data mottatt'}), 400
         
-        # Ensure database is initialized (safe for Vercel)
+        # Ensure database is initialized
         print("Initializing database...")
         init_db()
         print("Database initialization completed")
         
-        conn = sqlite3.connect(DB_PATH)
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({'success': False, 'error': 'Database connection failed'}), 500
+            
         cursor = conn.cursor()
         print("Database connection established")
         
-        # Test if table exists after initialization
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='activities'")
-        table_exists = cursor.fetchone() is not None
-        print(f"Table 'activities' exists: {table_exists}")
-        
-        if not table_exists:
-            print("ERROR: Table does not exist after initialization!")
-            return jsonify({'success': False, 'error': 'Database table could not be created'}), 500
-        
         cursor.execute('''
-            INSERT OR REPLACE INTO activities 
+            INSERT INTO activities 
             (id, iCalUID, date, dayOfWeek, startTime, endTime, activities, colors, comment, rangeOfficer)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (id) DO UPDATE SET
+                iCalUID = EXCLUDED.iCalUID,
+                date = EXCLUDED.date,
+                dayOfWeek = EXCLUDED.dayOfWeek,
+                startTime = EXCLUDED.startTime,
+                endTime = EXCLUDED.endTime,
+                activities = EXCLUDED.activities,
+                colors = EXCLUDED.colors,
+                comment = EXCLUDED.comment,
+                rangeOfficer = EXCLUDED.rangeOfficer,
+                updated_at = CURRENT_TIMESTAMP
         ''', (
             data['id'],
             data.get('iCalUID'),
@@ -265,15 +289,18 @@ def update_activity(activity_id):
         return '', 200
     data = request.json
     
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': False, 'error': 'Database connection failed'}), 500
+        
     cursor = conn.cursor()
     
     cursor.execute('''
         UPDATE activities 
-        SET date = ?, dayOfWeek = ?, startTime = ?, endTime = ?, 
-            activities = ?, colors = ?, comment = ?, rangeOfficer = ?,
+        SET date = %s, dayOfWeek = %s, startTime = %s, endTime = %s, 
+            activities = %s, colors = %s, comment = %s, rangeOfficer = %s,
             updated_at = CURRENT_TIMESTAMP
-        WHERE id = ?
+        WHERE id = %s
     ''', (
         data['date'],
         data['dayOfWeek'],
@@ -295,9 +322,12 @@ def update_activity(activity_id):
 def delete_activity(activity_id):
     if request.method == 'OPTIONS':
         return '', 200
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': False, 'error': 'Database connection failed'}), 500
+        
     cursor = conn.cursor()
-    cursor.execute('DELETE FROM activities WHERE id = ?', (activity_id,))
+    cursor.execute('DELETE FROM activities WHERE id = %s', (activity_id,))
     conn.commit()
     conn.close()
     
@@ -353,10 +383,16 @@ def import_calendar():
             })
         
         # Save events to database
-        # Ensure database is initialized (safe for Vercel)
+        # Ensure database is initialized
         init_db()
         
-        conn = sqlite3.connect(DB_PATH)
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({
+                'success': False,
+                'error': 'Database connection failed'
+            }), 500
+            
         cursor = conn.cursor()
         
         imported_count = 0
@@ -365,7 +401,7 @@ def import_calendar():
             # Check if event already exists
             cursor.execute('''
                 SELECT id FROM activities 
-                WHERE date = ? AND startTime = ? AND endTime = ?
+                WHERE date = %s AND startTime = %s AND endTime = %s
             ''', (event['date'], event['startTime'], event['endTime']))
             
             existing_activity = cursor.fetchone()
@@ -374,8 +410,8 @@ def import_calendar():
                 # Update existing activity with new data
                 cursor.execute('''
                     UPDATE activities 
-                    SET dayOfWeek = ?, activities = ?, colors = ?, comment = ?, rangeOfficer = ?, updated_at = CURRENT_TIMESTAMP
-                    WHERE id = ?
+                    SET dayOfWeek = %s, activities = %s, colors = %s, comment = %s, rangeOfficer = %s, updated_at = CURRENT_TIMESTAMP
+                    WHERE id = %s
                 ''', (
                     event['dayOfWeek'],
                     json.dumps(event['activities']),
@@ -390,7 +426,7 @@ def import_calendar():
                 cursor.execute('''
                     INSERT INTO activities (id, date, dayOfWeek, startTime, endTime, 
                                           activities, colors, comment, rangeOfficer, created_at, updated_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
                 ''', (
                     event['id'],
                     event['date'],
@@ -623,7 +659,10 @@ def get_color_for_activity(activity_type):
 def check_duplicates():
     if request.method == 'OPTIONS':
         return '', 200
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': False, 'error': 'Database connection failed'}), 500
+        
     cursor = conn.cursor()
     cursor.execute('''
         SELECT date, startTime, endTime, COUNT(*) as count
@@ -649,7 +688,10 @@ def check_duplicates():
 def remove_duplicates():
     if request.method == 'OPTIONS':
         return '', 200
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': False, 'error': 'Database connection failed'}), 500
+        
     cursor = conn.cursor()
     
     # Find and remove duplicates, keeping only the first occurrence
@@ -672,7 +714,10 @@ def cleanup_maintenance_events():
     if request.method == 'OPTIONS':
         return '', 200
     """Remove maintenance events from database"""
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': False, 'error': 'Database connection failed'}), 500
+        
     cursor = conn.cursor()
     
     # Get all activities
@@ -696,7 +741,7 @@ def cleanup_maintenance_events():
             should_delete = True
             
         if should_delete:
-            cursor.execute('DELETE FROM activities WHERE id = ?', (activity_id,))
+            cursor.execute('DELETE FROM activities WHERE id = %s', (activity_id,))
             deleted_count += 1
     
     conn.commit()
@@ -713,7 +758,10 @@ def delete_all_activities():
     if request.method == 'OPTIONS':
         return '', 200
     """Delete all activities from database"""
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': False, 'error': 'Database connection failed'}), 500
+        
     cursor = conn.cursor()
     
     # Get count before deletion
