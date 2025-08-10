@@ -149,6 +149,17 @@ def delete_activity(activity_id):
 @app.route('/api/import/calendar', methods=['POST'])
 def import_calendar():
     try:
+        # Get date range from request
+        data = request.get_json()
+        from_date = data.get('from_date')
+        to_date = data.get('to_date')
+        
+        if not from_date or not to_date:
+            return jsonify({
+                'success': False,
+                'error': 'Fra- og til-dato må være spesifisert'
+            }), 400
+        
         # iCal URL for Lorenskog Skytterlag
         ical_url = "https://calendar.google.com/calendar/ical/2h495fqj8gr9p42361rriptlibc7gf6k%40import.calendar.google.com/public/basic.ics"
         
@@ -158,7 +169,7 @@ def import_calendar():
         
         # Parse iCal data
         ical_data = response.text
-        events = parse_ical_data(ical_data)
+        events = parse_ical_data(ical_data, from_date, to_date)
         
         if not events:
             return jsonify({
@@ -217,7 +228,7 @@ def import_calendar():
             'error': f'Feil ved import: {str(e)}'
         }), 500
 
-def parse_ical_data(ical_content):
+def parse_ical_data(ical_content, from_date=None, to_date=None):
     """Parse iCal data and convert to activities"""
     events = []
     current_event = {}
@@ -237,7 +248,13 @@ def parse_ical_data(ical_content):
                 # Convert to activity format
                 activity = convert_event_to_activity(current_event, day_names)
                 if activity:
-                    events.append(activity)
+                    # Filter by date range if specified
+                    if from_date and to_date:
+                        event_date = activity['date']
+                        if from_date <= event_date <= to_date:
+                            events.append(activity)
+                    else:
+                        events.append(activity)
             in_event = False
         elif in_event and line.startswith('SUMMARY:'):
             current_event['summary'] = line[8:]

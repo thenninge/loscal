@@ -256,6 +256,17 @@
                         <div id="importCalendarPanel" class="admin-panel">
                             <h4>Last inn ekstern kalender</h4>
                             <p>Hent aktiviteter fra Lorenskog Skytterlag's vaktplan-kalender.</p>
+                            
+                            <div class="form-group">
+                                <label for="importFromDate">Fra dato:</label>
+                                <input type="date" id="importFromDate" name="importFromDate">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="importToDate">Til dato:</label>
+                                <input type="date" id="importToDate" name="importToDate">
+                            </div>
+                            
                             <div class="import-info">
                                 <div class="info-item">
                                     <i class="fas fa-calendar"></i>
@@ -263,7 +274,7 @@
                                 </div>
                                 <div class="info-item">
                                     <i class="fas fa-clock"></i>
-                                    <span>Periode: 4.-11. august 2025</span>
+                                    <span>Periode: <span id="importPeriodDisplay">Velg periode</span></span>
                                 </div>
                                 <div class="info-item">
                                     <i class="fas fa-map"></i>

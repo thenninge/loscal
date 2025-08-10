@@ -304,7 +304,10 @@ function setupEventListeners() {
         switchAdminPanel('addActivityPanel');
         resetEditForm(); // Clear form for new activity
     });
-    document.getElementById('importCalendarBtn').addEventListener('click', async () => switchAdminPanel('importCalendarPanel'));
+    document.getElementById('importCalendarBtn').addEventListener('click', async () => {
+        switchAdminPanel('importCalendarPanel');
+        setupImportDateDefaults();
+    });
     document.getElementById('checkDuplicatesBtn').addEventListener('click', async () => {
         switchAdminPanel('checkDuplicatesPanel');
         await checkForDuplicates();
@@ -963,8 +966,23 @@ function switchAdminPanel(panelId) {
 
 async function startImport() {
     try {
+        const fromDate = document.getElementById('importFromDate').value;
+        const toDate = document.getElementById('importToDate').value;
+        
+        if (!fromDate || !toDate) {
+            alert('Vennligst velg både fra- og til-dato');
+            return;
+        }
+        
         const response = await fetch('/api/import/calendar', {
-            method: 'POST'
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                from_date: fromDate,
+                to_date: toDate
+            })
         });
         
         if (response.ok) {
@@ -1486,6 +1504,47 @@ function formatDate(date) {
 
 function formatTime(time) {
     return time;
+}
+
+function setupImportDateDefaults() {
+    const today = new Date();
+    const fromDate = document.getElementById('importFromDate');
+    const toDate = document.getElementById('importToDate');
+    
+    // Set default from date to today
+    const todayString = today.toISOString().split('T')[0];
+    fromDate.value = todayString;
+    
+    // Set default to date to 7 days from today
+    const toDateObj = new Date(today);
+    toDateObj.setDate(today.getDate() + 7);
+    const toDateString = toDateObj.toISOString().split('T')[0];
+    toDate.value = toDateString;
+    
+    // Update period display
+    updateImportPeriodDisplay();
+    
+    // Add event listeners to update display when dates change
+    fromDate.addEventListener('change', updateImportPeriodDisplay);
+    toDate.addEventListener('change', updateImportPeriodDisplay);
+}
+
+function updateImportPeriodDisplay() {
+    const fromDate = document.getElementById('importFromDate');
+    const toDate = document.getElementById('importToDate');
+    const display = document.getElementById('importPeriodDisplay');
+    
+    if (fromDate.value && toDate.value) {
+        const from = new Date(fromDate.value);
+        const to = new Date(toDate.value);
+        
+        const fromFormatted = from.toLocaleDateString('no-NO', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        const toFormatted = to.toLocaleDateString('no-NO', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        
+        display.textContent = `${fromFormatted} - ${toFormatted}`;
+    } else {
+        display.textContent = 'Velg periode';
+    }
 }
 
 // Add some CSS for calendar day headers
