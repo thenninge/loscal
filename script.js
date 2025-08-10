@@ -889,14 +889,17 @@ function determineActivityType(summary) {
 
 function getColorForActivity(activityType) {
     const colors = {
-        'Jaktskyting': '#3B82F6',
+        'Jeger': '#228B22',
         'DFS': '#FFFFFF',
         'Pistol': '#F59E0B',
-        'Storviltprøve': '#10B981',
+        'Storviltprøve': '#3B82F6',
         'Uavklart': '#EF4444',
-        'Åpen for alle': '#FF6B6B',
-        'Stevne': '#8B5CF6',
-        'Annet': '#6B7280'
+        'Åpen for alle': '#98FB98',
+        'PRS': '#8B5CF6',
+        'Leirdue': '#EC4899',
+        'Annet': '#6B7280',
+        '100m': '#87CEEB',
+        '200m': '#4ECDC4'
     };
     return [colors[activityType] || colors['Annet']];
 }
@@ -1034,14 +1037,17 @@ function addNewOpening(e) {
     
     // Get colors for selected activities
     const colors = {
-        'Jaktskyting': '#3B82F6',
+        'Jeger': '#228B22',
         'DFS': '#FFFFFF',
         'Pistol': '#F59E0B',
-        'Storviltprøve': '#10B981',
+        'Storviltprøve': '#3B82F6',
         'Uavklart': '#EF4444',
-        'Åpen for alle': '#FF6B6B',
-        'Stevne': '#8B5CF6',
-        'Annet': '#6B7280'
+        'Åpen for alle': '#98FB98',
+        'PRS': '#8B5CF6',
+        'Leirdue': '#EC4899',
+        'Annet': '#6B7280',
+        '100m': '#87CEEB',
+        '200m': '#4ECDC4'
     };
     
     const selectedColors = selectedActivities.map(activity => colors[activity]);
