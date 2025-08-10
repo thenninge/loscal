@@ -524,7 +524,12 @@ function renderCalendar() {
                     <div class="day-events">
                         ${dayEvents.map(event => `
                             <div class="day-event" style="background-color: ${event.colors}">
-                                ${event.startTime} ${event.activities.join(' + ')}
+                                <span class="event-text">${event.startTime} ${event.activities.join(' + ')}</span>
+                                ${adminMode ? `
+                                    <button class="calendar-delete-btn" onclick="event.stopPropagation(); deleteActivityById('${event.id}')" title="Slett aktivitet">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                ` : ''}
                             </div>
                         `).join('')}
                     </div>
@@ -676,8 +681,12 @@ function updateUIForAdminMode() {
         removeEditableActivities();
     }
     
-    // Re-render list to show/hide delete buttons
-    renderList();
+    // Re-render current view to show/hide delete buttons
+    if (currentView === 'list') {
+        renderList();
+    } else {
+        renderCalendar();
+    }
 }
 
 function makeActivitiesEditable() {
