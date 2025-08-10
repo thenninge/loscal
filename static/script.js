@@ -1202,6 +1202,7 @@ function switchAdminPanel(panelId) {
 async function startImport() {
     try {
         console.log('startImport called');
+        console.log('startImport: About to get form elements...');
         const fromDateElement = document.getElementById('importFromDate');
         const toDateElement = document.getElementById('importToDate');
         const autoCategorizeElement = document.getElementById('autoCategorizeCheckbox');
@@ -1218,6 +1219,8 @@ async function startImport() {
             alert('Vennligst velg både fra- og til-dato');
             return;
         }
+        
+        console.log('startImport: About to show loading overlay...');
         
         // Show loading overlay and close admin modal
         console.log('startImport: Showing loading overlay...');
