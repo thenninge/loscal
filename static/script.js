@@ -455,18 +455,20 @@ function createListItem(item) {
     
     return `
         <div class="list-item ${item.activities[0]}" data-id="${item.id}">
-            <div class="item-header">
-                <div class="item-date">${formattedDate} (${item.dayOfWeek})</div>
-                <div class="item-time">${item.startTime} - ${item.endTime}</div>
-                ${adminButtons}
+            <div class="item-content">
+                <div class="item-header">
+                    <div class="item-date">${formattedDate} (${item.dayOfWeek})</div>
+                    <div class="item-time">${item.startTime} - ${item.endTime}</div>
+                </div>
+                <div class="item-activity">
+                    ${activityBadges}
+                </div>
+                <div class="item-details">
+                    <strong>Standsplassleder:</strong> ${item.rangeOfficer || 'Ikke satt'}
+                </div>
+                ${item.comment ? `<div class="item-comment">${item.comment}</div>` : ''}
             </div>
-            <div class="item-activity">
-                ${activityBadges}
-            </div>
-            <div class="item-details">
-                <strong>Standsplassleder:</strong> ${item.rangeOfficer || 'Ikke satt'}
-            </div>
-            ${item.comment ? `<div class="item-comment">${item.comment}</div>` : ''}
+            ${adminButtons}
         </div>
     `;
 }
