@@ -396,10 +396,10 @@ def extract_range_officer(summary):
 def get_color_for_activity(activity_type):
     """Get color for activity type"""
     colors = {
-        'Åpen for alle': '#90EE90',  # Lys grønn
+        'Åpen for alle': '#98FB98',  # Mykere lys grønn
         'Jeger': '#228B22',          # Mørk grønn
         'DFS': '#FFFFFF',            # Hvit
-        'Pistol': '#000000',         # Svart
+        'Pistol': '#F59E0B',         # Oransje
         'PRS': '#8B5CF6',            # Lilla
         'Leirdue': '#EC4899',        # Rosa
         'Storviltprøve': '#3B82F6',  # Blå
