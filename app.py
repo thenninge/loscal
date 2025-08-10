@@ -1011,15 +1011,42 @@ def remove_duplicates():
         
     cursor = conn.cursor()
     
-    # Find and remove duplicates, keeping only the first occurrence
+    # Find duplicates
     cursor.execute('''
-        DELETE FROM activities 
-        WHERE id NOT IN (
-            SELECT MIN(id) 
-            FROM activities 
-            GROUP BY date, startTime, endTime
-        )
+        SELECT date, startTime, endTime, COUNT(*) as count
+        FROM activities 
+        GROUP BY date, startTime, endTime 
+        HAVING COUNT(*) > 1
     ''')
+    duplicates = cursor.fetchall()
+    
+    # For each duplicate group, keep the one with highest priority
+    for duplicate in duplicates:
+        date, start_time, end_time, count = duplicate
+        
+        # Get all activities in this time slot
+        cursor.execute('''
+            SELECT id, comment FROM activities 
+            WHERE date = %s AND startTime = %s AND endTime = %s
+        ''', (date, start_time, end_time))
+        
+        activities = cursor.fetchall()
+        best_id = activities[0][0]  # Default to first
+        
+        # Find the best activity (prioritize Standplassleder over Vakt Standplass)
+        for activity_id, comment in activities:
+            comment_lower = comment.lower()
+            if 'standplassleder' in comment_lower:
+                best_id = activity_id
+                break  # Highest priority, no need to check others
+            elif 'vakt standplass' in comment_lower and 'standplassleder' not in comment_lower:
+                best_id = activity_id
+        
+        # Delete all except the best one
+        cursor.execute('''
+            DELETE FROM activities 
+            WHERE date = %s AND startTime = %s AND endTime = %s AND id != %s
+        ''', (date, start_time, end_time, best_id))
     
     conn.commit()
     conn.close()
