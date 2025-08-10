@@ -434,14 +434,19 @@ function createListItem(item) {
         `<span class="activity-badge ${activity}" style="background-color: ${item.colors[index]}">${activity}</span>`
     ).join('');
     
+    // Only show delete button in admin mode
+    const deleteButton = adminMode ? `
+        <button class="delete-btn" onclick="deleteActivityById('${item.id}')" title="Slett aktivitet">
+            <i class="fas fa-trash"></i>
+        </button>
+    ` : '';
+    
     return `
         <div class="list-item ${item.activities[0]}" data-id="${item.id}">
             <div class="item-header">
                 <div class="item-date">${formattedDate} (${item.dayOfWeek})</div>
                 <div class="item-time">${item.startTime} - ${item.endTime}</div>
-                <button class="delete-btn" onclick="deleteActivityById('${item.id}')" title="Slett aktivitet">
-                    <i class="fas fa-trash"></i>
-                </button>
+                ${deleteButton}
             </div>
             <div class="item-activity">
                 ${activityBadges}
@@ -657,6 +662,9 @@ function updateUIForAdminMode() {
         adminBtn.innerHTML = '<i class="fas fa-cog"></i>';
         removeEditableActivities();
     }
+    
+    // Re-render list to show/hide delete buttons
+    renderList();
 }
 
 function makeActivitiesEditable() {
