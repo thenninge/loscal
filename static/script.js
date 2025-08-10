@@ -214,30 +214,38 @@ document.addEventListener('DOMContentLoaded', async function() {
 // Data management
 async function loadData() {
     try {
+        console.log('loadData: Starting to fetch data from API...');
         const response = await fetch('/api/activities');
+        console.log('loadData: Response status:', response.status);
+        
         if (response.ok) {
             const data = await response.json();
-            if (data.length > 0) {
+            console.log('loadData: Raw data from API:', data);
+            console.log('loadData: Data type:', typeof data);
+            console.log('loadData: Data length:', data ? data.length : 'undefined');
+            
+            if (data && data.length > 0) {
                 openingHours = data;
                 // Migrate "Ledig" to "Uavklart" in existing data
                 migrateLedigToUavklart();
-                console.log('Loaded existing data from database:', data.length, 'activities');
+                console.log('loadData: Loaded existing data from database:', data.length, 'activities');
+                console.log('loadData: First activity sample:', data[0]);
             } else {
                 // No data in database - start with empty array
                 openingHours = [];
-                console.log('Database is empty - starting with blank slate');
+                console.log('loadData: Database is empty - starting with blank slate');
             }
         } else {
-            console.log('Error loading data from API, starting with empty array');
+            console.log('loadData: Error loading data from API, starting with empty array');
             openingHours = [];
         }
     } catch (error) {
-        console.log('Error loading data from API, starting with empty array:', error);
+        console.log('loadData: Error loading data from API, starting with empty array:', error);
         openingHours = [];
     }
     
-    console.log('Loaded data:', openingHours);
-    console.log('openingHours length:', openingHours ? openingHours.length : 'undefined');
+    console.log('loadData: Final openingHours:', openingHours);
+    console.log('loadData: openingHours length:', openingHours ? openingHours.length : 'undefined');
     
     // Update activity counter if admin panel is open
     updateActivityCounter();
@@ -1226,13 +1234,16 @@ async function startImport() {
         
         if (response.ok) {
             const result = await response.json();
+            console.log('startImport: Success response:', result);
             
             // Show success message
             const message = `Import fullført! ${result.imported_count} aktiviteter importert.`;
             showMessage(message, 'success');
             
             // Reload data
+            console.log('startImport: Reloading data after import...');
             await loadData();
+            console.log('startImport: Data reloaded, rendering views...');
             renderList();
             renderCalendar();
             updateActivityCounter();
