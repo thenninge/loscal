@@ -1227,7 +1227,7 @@ async function startImport() {
         console.log('startImport: About to show loading overlay...');
         
         // Simple loading message
-        importButton = document.querySelector('#importCalendarPanel button[type="submit"]');
+        importButton = document.getElementById('startImportBtn');
         originalText = importButton.textContent;
         importButton.textContent = 'Laster inn...';
         importButton.disabled = true;
