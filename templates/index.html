@@ -32,6 +32,9 @@
             <button id="checkDuplicatesBtnMain" class="btn btn-admin-action" title="Sjekk for duplikater">
                 <i class="fas fa-search"></i>
             </button>
+            <button id="deleteAllActivitiesBtnMain" class="btn btn-admin-action" title="Slett alle aktiviteter" style="background-color: #dc3545;">
+                <i class="fas fa-trash-alt"></i>
+            </button>
         </div>
         </header>
 
@@ -162,10 +165,7 @@
                                 <i class="fas fa-search"></i>
                                 <span>Sjekk for duplikater</span>
                             </button>
-                            <button id="debugBtn" class="admin-menu-item">
-                                <i class="fas fa-bug"></i>
-                                <span>Debug og Testing</span>
-                            </button>
+
                         </div>
                         
                         <!-- Add Activity Panel -->
@@ -290,24 +290,7 @@
                             </button>
                         </div>
                         
-                        <!-- Debug Panel -->
-                        <div id="debugPanel" class="admin-panel">
-                            <h4>Debug og Testing</h4>
-                            <p>Verktøy for debugging og testing av import-funksjonalitet.</p>
-                            <div class="debug-info">
-                                <div class="info-item">
-                                    <i class="fas fa-database"></i>
-                                    <span>Database: <span id="activityCount">0</span> aktiviteter</span>
-                                </div>
-                                <div class="info-item">
-                                    <i class="fas fa-exclamation-triangle"></i>
-                                    <span>ADVARSEL: Sletting av alle aktiviteter kan ikke angres!</span>
-                                </div>
-                            </div>
-                            <button id="deleteAllActivitiesBtn" class="btn btn-danger">
-                                <i class="fas fa-trash-alt"></i> Slett alle aktiviteter
-                            </button>
-                        </div>
+
                     </div>
                 </div>
             </div>

@@ -309,10 +309,7 @@ function setupEventListeners() {
         switchAdminPanel('checkDuplicatesPanel');
         await checkForDuplicates();
     });
-    document.getElementById('debugBtn').addEventListener('click', () => {
-        switchAdminPanel('debugPanel');
-        updateActivityCount();
-    });
+
     
     // Import calendar button
     document.getElementById('startImportBtn').addEventListener('click', async () => await startImport());
@@ -344,6 +341,7 @@ function setupEventListeners() {
     
     // Delete all activities button
     document.getElementById('deleteAllActivitiesBtn').addEventListener('click', async () => await deleteAllActivities());
+    document.getElementById('deleteAllActivitiesBtnMain').addEventListener('click', async () => await deleteAllActivities());
     
     // Filter checkboxes
     document.querySelectorAll('.filter-item input').forEach(checkbox => {

@@ -820,32 +820,7 @@ body {
     color: #6c757d;
 }
 
-.debug-info {
-    background: #f8f9fa;
-    border: 1px solid #e9ecef;
-    border-radius: 8px;
-    padding: 1rem;
-    margin-bottom: 1rem;
-}
 
-.debug-info .info-item {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-bottom: 0.5rem;
-    font-size: 0.9rem;
-}
-
-.debug-info .info-item:last-child {
-    margin-bottom: 0;
-    color: #dc3545;
-    font-weight: 500;
-}
-
-.debug-info .info-item i {
-    width: 16px;
-    color: #6c757d;
-}
 
 .btn-danger {
     background: #e74c3c;
