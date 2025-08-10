@@ -766,6 +766,17 @@ function verifyPin() {
         return;
     }
     
+    // Try multiple ways to read the value
+    console.log('=== MULTIPLE WAYS TO READ VALUE ===');
+    console.log('1. pinInput.value:', pinInput.value);
+    console.log('2. pinInput.getAttribute("value"):', pinInput.getAttribute('value'));
+    console.log('3. pinInput.defaultValue:', pinInput.defaultValue);
+    console.log('4. pinInput.textContent:', pinInput.textContent);
+    console.log('5. pinInput.innerText:', pinInput.innerText);
+    console.log('6. pinInput.innerHTML:', pinInput.innerHTML);
+    console.log('7. document.getElementById("pinInput").value:', document.getElementById('pinInput').value);
+    console.log('=====================================');
+    
     // Try to focus the input first
     pinInput.focus();
     
