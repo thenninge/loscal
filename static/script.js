@@ -380,7 +380,10 @@ function setupEventListeners() {
     document.getElementById('deleteActivityBtn').addEventListener('click', async () => await deleteActivity());
     
     // Delete all activities button
-    document.getElementById('deleteAllActivitiesBtnMain').addEventListener('click', () => switchAdminPanel('deleteActivitiesPanel'));
+    document.getElementById('deleteAllActivitiesBtnMain').addEventListener('click', () => {
+        openAdminModal();
+        switchAdminPanel('deleteActivitiesPanel');
+    });
     
     // Close admin modal button
     document.getElementById('closeAdminModalBtn').addEventListener('click', closeAdminModal);
@@ -1221,7 +1224,8 @@ function switchAdminPanel(panelId) {
     const menuItemMap = {
         'addActivityPanel': 'addActivityBtn',
         'importCalendarPanel': 'importCalendarBtn',
-        'checkDuplicatesPanel': 'checkDuplicatesBtn'
+        'checkDuplicatesPanel': 'checkDuplicatesBtn',
+        'deleteActivitiesPanel': 'deleteActivitiesBtn'
     };
     
     const menuItemId = menuItemMap[panelId];
