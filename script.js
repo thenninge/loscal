@@ -645,6 +645,12 @@ function toggleFilters() {
 
 // Admin functionality
 function openAdminModal() {
+    // If already in admin mode, just toggle it off
+    if (adminMode) {
+        toggleAdminMode();
+        return;
+    }
+    
     // Show PIN dialog first
     showPinDialog();
 }
