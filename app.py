@@ -805,18 +805,23 @@ def remove_duplicate_events(events):
             filtered_events.append(group_events[0])
         else:
             # Duplicates found, prioritize based on summary
+            print(f"🔍 Found duplicates for key: {key}")
             best_event = group_events[0]  # Default to first event
             
             for event in group_events:
                 summary = event['comment'].lower()
+                print(f"📋 Checking event: {summary}")
                 
                 # Priority order: Standplassleder > Vakt Standplass > others
                 if 'standplassleder' in summary:
+                    print(f"✅ Found Standplassleder, keeping: {summary}")
                     best_event = event
                     break  # Highest priority, no need to check others
                 elif 'vakt standplass' in summary and 'standplassleder' not in best_event['comment'].lower():
+                    print(f"⚠️ Found Vakt Standplass, keeping: {summary}")
                     best_event = event
             
+            print(f"🎯 Final choice: {best_event['comment']}")
             filtered_events.append(best_event)
     
     return filtered_events
