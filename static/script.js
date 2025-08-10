@@ -805,8 +805,8 @@ function testPinInput() {
     
     // Try to set a test value
     if (pinInput) {
-        pinInput.value = '1234';
-        console.log('Set test value "1234"');
+        pinInput.value = '0406';
+        console.log('Set correct PIN "0406"');
         console.log('New input value:', pinInput.value);
     }
 }
