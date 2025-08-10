@@ -32,36 +32,47 @@ import os
 # Check if we're running on Vercel
 IS_VERCEL = os.environ.get('VERCEL') == '1'
 
-# Supabase PostgreSQL connection (with connection pooling for Vercel)
-DATABASE_URL = "postgresql://postgres.toofqfonichtzexpuvzc:sauer200STR!!@aws-0-eu-north-1.pooler.supabase.com:6543/postgres"
-
 def get_db_connection():
     """Get database connection"""
-    try:
-        # Parse connection string for pg8000
-        # postgresql://postgres.toofqfonichtzexpuvzc:password@aws-0-eu-north-1.pooler.supabase.com:6543/postgres
-        parts = DATABASE_URL.replace('postgresql://', '').split('@')
-        user_pass = parts[0].split(':')
-        host_port_db = parts[1].split('/')
-        host_port = host_port_db[0].split(':')
+    if IS_VERCEL:
+        # Supabase PostgreSQL connection (with connection pooling for Vercel)
+        DATABASE_URL = "postgresql://postgres.toofqfonichtzexpuvzc:sauer200STR!!@aws-0-eu-north-1.pooler.supabase.com:6543/postgres"
         
-        print(f"Connecting to database: {host_port[0]}:{host_port[1]}")
-        
-        conn = pg8000.Connection(
-            user=user_pass[0],
-            password=user_pass[1],
-            host=host_port[0],
-            port=int(host_port[1]),
-            database=host_port_db[1]
-        )
-        print("Database connection successful")
-        return conn
-    except Exception as e:
-        print(f"Database connection error: {str(e)}")
-        print(f"Error type: {type(e)}")
-        import traceback
-        traceback.print_exc()
-        return None
+        try:
+            # Parse connection string for pg8000
+            parts = DATABASE_URL.replace('postgresql://', '').split('@')
+            user_pass = parts[0].split(':')
+            host_port_db = parts[1].split('/')
+            host_port = host_port_db[0].split(':')
+            
+            print(f"Connecting to Supabase: {host_port[0]}:{host_port[1]}")
+            
+            conn = pg8000.Connection(
+                user=user_pass[0],
+                password=user_pass[1],
+                host=host_port[0],
+                port=int(host_port[1]),
+                database=host_port_db[1]
+            )
+            print("Supabase connection successful")
+            return conn
+        except Exception as e:
+            print(f"Supabase connection error: {str(e)}")
+            print(f"Error type: {type(e)}")
+            import traceback
+            traceback.print_exc()
+            return None
+    else:
+        # Local SQLite database
+        import sqlite3
+        try:
+            print("Connecting to local SQLite database")
+            conn = sqlite3.connect('skytebane.db')
+            print("Local SQLite connection successful")
+            return conn
+        except Exception as e:
+            print(f"Local SQLite connection error: {str(e)}")
+            return None
 
 def init_db():
     """Initialize database - safe to call multiple times"""
@@ -72,25 +83,47 @@ def init_db():
             return
             
         cursor = conn.cursor()
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS activities (
-                id VARCHAR(255) PRIMARY KEY,
-                iCalUID VARCHAR(255),
-                date VARCHAR(10) NOT NULL,
-                dayOfWeek VARCHAR(20) NOT NULL,
-                startTime VARCHAR(5) NOT NULL,
-                endTime VARCHAR(5) NOT NULL,
-                activities JSONB NOT NULL,
-                colors JSONB NOT NULL,
-                comment TEXT,
-                rangeOfficer VARCHAR(255),
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        ''')
+        
+        if IS_VERCEL:
+            # PostgreSQL schema for Supabase
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS activities (
+                    id VARCHAR(255) PRIMARY KEY,
+                    iCalUID VARCHAR(255),
+                    date VARCHAR(10) NOT NULL,
+                    dayOfWeek VARCHAR(20) NOT NULL,
+                    startTime VARCHAR(5) NOT NULL,
+                    endTime VARCHAR(5) NOT NULL,
+                    activities JSONB NOT NULL,
+                    colors JSONB NOT NULL,
+                    comment TEXT,
+                    rangeOfficer VARCHAR(255),
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+        else:
+            # SQLite schema for local development
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS activities (
+                    id TEXT PRIMARY KEY,
+                    iCalUID TEXT,
+                    date TEXT NOT NULL,
+                    dayOfWeek TEXT NOT NULL,
+                    startTime TEXT NOT NULL,
+                    endTime TEXT NOT NULL,
+                    activities TEXT NOT NULL,
+                    colors TEXT NOT NULL,
+                    comment TEXT,
+                    rangeOfficer TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+        
         conn.commit()
         conn.close()
-        print("Database initialized successfully")
+        print(f"Database initialized successfully ({'Supabase PostgreSQL' if IS_VERCEL else 'Local SQLite'})")
     except Exception as e:
         print(f"Error initializing database: {str(e)}")
         import traceback
@@ -156,9 +189,14 @@ def debug_database():
             
         cursor = conn.cursor()
         
-        # Test if table exists
-        cursor.execute("SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'activities')")
-        table_exists = cursor.fetchone()[0]
+        if IS_VERCEL:
+            # Test if table exists (PostgreSQL)
+            cursor.execute("SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'activities')")
+            table_exists = cursor.fetchone()[0]
+        else:
+            # Test if table exists (SQLite)
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='activities'")
+            table_exists = cursor.fetchone() is not None
         
         # Test if we can read
         cursor.execute("SELECT COUNT(*) FROM activities")
@@ -167,7 +205,7 @@ def debug_database():
         conn.close()
         
         return jsonify({
-            'database_type': 'Supabase PostgreSQL',
+            'database_type': 'Supabase PostgreSQL' if IS_VERCEL else 'Local SQLite',
             'is_vercel': IS_VERCEL,
             'table_exists': table_exists,
             'activity_count': count,
@@ -178,7 +216,7 @@ def debug_database():
         import traceback
         traceback.print_exc()
         return jsonify({
-            'database_type': 'Supabase PostgreSQL',
+            'database_type': 'Supabase PostgreSQL' if IS_VERCEL else 'Local SQLite',
             'is_vercel': IS_VERCEL,
             'error': str(e),
             'status': 'Database connection failed'
@@ -208,26 +246,47 @@ def get_activities():
         if not conn:
             return jsonify({'success': False, 'error': 'Database connection failed'}), 500
             
-        cursor = conn.cursor()
-        cursor.execute('SELECT * FROM activities ORDER BY date, startTime')
-        rows = cursor.fetchall()
-        conn.close()
-        print(f"Retrieved {len(rows)} activities from database")
+        if IS_VERCEL:
+            cursor = conn.cursor(cursor_factory=RealDictCursor)
+            cursor.execute('SELECT * FROM activities ORDER BY date, startTime')
+            rows = cursor.fetchall()
+            
+            activities = []
+            for row in rows:
+                activities.append({
+                    'id': row['id'],
+                    'iCalUID': row['icaluid'],
+                    'date': row['date'],
+                    'dayOfWeek': row['dayofweek'],
+                    'startTime': row['starttime'],
+                    'endTime': row['endtime'],
+                    'activities': row['activities'],
+                    'colors': row['colors'],
+                    'comment': row['comment'],
+                    'rangeOfficer': row['rangeofficer']
+                })
+        else:
+            cursor = conn.cursor()
+            cursor.execute('SELECT * FROM activities ORDER BY date, startTime')
+            rows = cursor.fetchall()
+            
+            activities = []
+            for row in rows:
+                activities.append({
+                    'id': row[0],
+                    'iCalUID': row[1],
+                    'date': row[2],
+                    'dayOfWeek': row[3],
+                    'startTime': row[4],
+                    'endTime': row[5],
+                    'activities': json.loads(row[6]),
+                    'colors': json.loads(row[7]),
+                    'comment': row[8],
+                    'rangeOfficer': row[9]
+                })
         
-        activities = []
-        for row in rows:
-            activities.append({
-                'id': row[0],
-                'iCalUID': row[1],
-                'date': row[2],
-                'dayOfWeek': row[3],
-                'startTime': row[4],
-                'endTime': row[5],
-                'activities': row[6],
-                'colors': row[7],
-                'comment': row[8],
-                'rangeOfficer': row[9]
-            })
+        conn.close()
+        print(f"Retrieved {len(activities)} activities from database")
         
         print(f"Returning {len(activities)} activities from database")
         
