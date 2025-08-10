@@ -845,9 +845,9 @@ function verifyPin() {
     }
     
     const enteredPin = pinInput.value;
-    const correctPin = '0406';
+    const correctPins = ['0406', '0808'];
     
-    if (enteredPin === correctPin) {
+    if (correctPins.includes(enteredPin)) {
         closePinDialog();
         toggleAdminMode();
         pinInput.value = ''; // Clear input
