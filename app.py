@@ -112,6 +112,10 @@ def debug_database():
     """Test database connectivity without changing anything"""
     try:
         print("Debug database endpoint called")
+        
+        # Ensure database is initialized (safe for Vercel)
+        init_db()
+        
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
         
