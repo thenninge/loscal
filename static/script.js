@@ -1154,7 +1154,7 @@ function determineActivityType(summary) {
 function getColorForActivity(activityType) {
     const colors = {
         'Jeger': '#228B22',
-        'DFS': '#FFFFFF',
+        'DFS': '#8B4513',
         'Pistol': '#F59E0B',
         'Storviltprøve': '#3B82F6',
         'Uavklart': '#EF4444',
@@ -1448,7 +1448,7 @@ async function addNewOpening(e) {
     // Get colors for selected activities
     const colors = {
         'Jeger': '#228B22',
-        'DFS': '#FFFFFF',
+        'DFS': '#8B4513',
         'Pistol': '#F59E0B',
         'Storviltprøve': '#3B82F6',
         'Uavklart': '#EF4444',

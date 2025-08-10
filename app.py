@@ -921,7 +921,7 @@ def get_color_for_activity(activity_type):
     colors = {
         'Åpen for alle': '#98FB98',  # Mykere lys grønn
         'Jeger': '#228B22',          # Mørk grønn
-        'DFS': '#FFFFFF',            # Hvit
+        'DFS': '#8B4513',            # Brun
         'Pistol': '#F59E0B',         # Oransje
         'PRS': '#8B5CF6',            # Lilla
         'Leirdue': '#EC4899',        # Rosa
