@@ -755,11 +755,25 @@ function createPinDialog() {
 }
 
 function verifyPin() {
+    // Check for multiple elements with same ID
+    const allPinInputs = document.querySelectorAll('#pinInput');
+    console.log('Number of elements with id="pinInput":', allPinInputs.length);
+    
+    if (allPinInputs.length > 1) {
+        console.log('WARNING: Multiple elements with same ID found!');
+        allPinInputs.forEach((input, index) => {
+            console.log(`Input ${index}:`, input);
+            console.log(`Input ${index} value:`, input.value);
+            console.log(`Input ${index} type:`, input.type);
+        });
+    }
+    
     const pinInput = document.getElementById('pinInput');
     
     console.log('PIN Input element:', pinInput);
     console.log('PIN Input value:', pinInput ? pinInput.value : 'Element not found');
     console.log('PIN Input focused:', pinInput ? pinInput === document.activeElement : 'Element not found');
+    console.log('PIN Input type:', pinInput ? pinInput.type : 'Element not found');
     
     if (!pinInput) {
         console.error('PIN input element not found!');
