@@ -249,22 +249,34 @@ def static_files(filename):
 def get_activities():
     try:
         print("Get activities endpoint called")
+        print(f"IS_VERCEL: {IS_VERCEL}")
         
         # Ensure database is initialized
+        print("Initializing database...")
         init_db()
+        print("Database initialization completed")
         
+        print("Getting database connection...")
         conn = get_db_connection()
         if not conn:
+            print("Database connection failed")
             return jsonify({'success': False, 'error': 'Database connection failed'}), 500
+        print("Database connection successful")
             
         if IS_VERCEL:
+            print("Using PostgreSQL (Vercel)")
             # Import RealDictCursor dynamically
             global RealDictCursor
             if RealDictCursor is None:
+                print("Importing RealDictCursor...")
                 from pg8000.extras import RealDictCursor
+                print("RealDictCursor imported successfully")
             cursor = conn.cursor(cursor_factory=RealDictCursor)
+            print("Executing SELECT query...")
             cursor.execute('SELECT * FROM activities ORDER BY date, startTime')
+            print("Fetching rows...")
             rows = cursor.fetchall()
+            print(f"Fetched {len(rows)} rows from PostgreSQL")
             
             activities = []
             for row in rows:
@@ -301,9 +313,13 @@ def get_activities():
                     # Skip this row and continue
                     continue
         else:
+            print("Using SQLite (Local)")
             cursor = conn.cursor()
+            print("Executing SELECT query...")
             cursor.execute('SELECT * FROM activities ORDER BY date, startTime')
+            print("Fetching rows...")
             rows = cursor.fetchall()
+            print(f"Fetched {len(rows)} rows from SQLite")
             
             activities = []
             for row in rows:
