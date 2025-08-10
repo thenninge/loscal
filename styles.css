@@ -822,6 +822,52 @@ body {
     color: #333;
 }
 
+/* PIN Dialog */
+.pin-dialog {
+    max-width: 400px;
+    width: 90%;
+}
+
+.pin-dialog .modal-header h2 {
+    color: #2c3e50;
+    font-size: 1.3rem;
+    margin: 0;
+}
+
+.pin-dialog .modal-header h2 i {
+    margin-right: 0.5rem;
+    color: #3498db;
+}
+
+.pin-dialog .modal-body p {
+    margin-bottom: 1.5rem;
+    color: #6c757d;
+    text-align: center;
+}
+
+.pin-dialog #pinInput {
+    width: 100%;
+    padding: 1rem;
+    font-size: 1.2rem;
+    text-align: center;
+    letter-spacing: 0.5rem;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+}
+
+.pin-dialog #pinInput:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+.pin-dialog .form-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+}
+
 /* Utility */
 .hidden {
     display: none !important;

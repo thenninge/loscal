@@ -645,8 +645,83 @@ function toggleFilters() {
 
 // Admin functionality
 function openAdminModal() {
-    // Toggle admin mode instead of opening modal
-    toggleAdminMode();
+    // Show PIN dialog first
+    showPinDialog();
+}
+
+function showPinDialog() {
+    // Create PIN dialog if it doesn't exist
+    if (!document.getElementById('pinDialog')) {
+        createPinDialog();
+    }
+    
+    // Show PIN dialog
+    document.getElementById('pinDialog').classList.add('active');
+    document.getElementById('pinInput').focus();
+}
+
+function createPinDialog() {
+    const pinDialog = document.createElement('div');
+    pinDialog.id = 'pinDialog';
+    pinDialog.className = 'modal';
+    pinDialog.innerHTML = `
+        <div class="modal-content pin-dialog">
+            <div class="modal-header">
+                <h2><i class="fas fa-lock"></i> Admin Tilgang</h2>
+                <button class="btn-close" onclick="closePinDialog()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Skriv inn PIN-kode for å få tilgang til admin-panelet:</p>
+                <div class="form-group">
+                    <input type="password" id="pinInput" placeholder="PIN-kode" maxlength="4" autocomplete="off">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closePinDialog()">Avbryt</button>
+                    <button type="button" class="btn btn-primary" onclick="verifyPin()">OK</button>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(pinDialog);
+    
+    // Add event listeners
+    document.getElementById('pinInput').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            verifyPin();
+        }
+    });
+}
+
+function verifyPin() {
+    const pinInput = document.getElementById('pinInput');
+    const enteredPin = pinInput.value;
+    const correctPin = '0406';
+    
+    if (enteredPin === correctPin) {
+        closePinDialog();
+        toggleAdminMode();
+        pinInput.value = ''; // Clear input
+    } else {
+        pinInput.value = ''; // Clear input
+        pinInput.placeholder = 'Feil PIN-kode!';
+        pinInput.style.borderColor = '#dc2626';
+        setTimeout(() => {
+            pinInput.placeholder = 'PIN-kode';
+            pinInput.style.borderColor = '';
+        }, 2000);
+    }
+}
+
+function closePinDialog() {
+    const pinDialog = document.getElementById('pinDialog');
+    if (pinDialog) {
+        pinDialog.classList.remove('active');
+        document.getElementById('pinInput').value = '';
+        document.getElementById('pinInput').placeholder = 'PIN-kode';
+        document.getElementById('pinInput').style.borderColor = '';
+    }
 }
 
 function toggleAdminMode() {
