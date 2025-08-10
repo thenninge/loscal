@@ -149,12 +149,18 @@ def delete_activity(activity_id):
 @app.route('/api/import/calendar', methods=['POST'])
 def import_calendar():
     try:
+        print("Import calendar endpoint called")
         # Get date range from request
         data = request.get_json()
+        print("Request data:", data)
         from_date = data.get('from_date')
         to_date = data.get('to_date')
         
+        print("From date:", from_date)
+        print("To date:", to_date)
+        
         if not from_date or not to_date:
+            print("Missing date parameters")
             return jsonify({
                 'success': False,
                 'error': 'Fra- og til-dato må være spesifisert'

@@ -315,8 +315,19 @@ function setupEventListeners() {
 
     
     // Import calendar button
-    document.getElementById('startImportBtn').addEventListener('click', async () => await startImport());
-    document.getElementById('removeDuplicatesBtn').addEventListener('click', async () => await removeDuplicates());
+    const startImportBtn = document.getElementById('startImportBtn');
+    if (startImportBtn) {
+        startImportBtn.addEventListener('click', async () => await startImport());
+        console.log('startImportBtn event listener added');
+    } else {
+        console.error('startImportBtn not found!');
+    }
+    
+    // Remove duplicates button
+    const removeDuplicatesBtn = document.getElementById('removeDuplicatesBtn');
+    if (removeDuplicatesBtn) {
+        removeDuplicatesBtn.addEventListener('click', async () => await removeDuplicates());
+    }
     
     // Modal events
     document.getElementById('closeModal').addEventListener('click', closeAdminModal);
@@ -966,14 +977,19 @@ function switchAdminPanel(panelId) {
 
 async function startImport() {
     try {
+        console.log('startImport called');
         const fromDate = document.getElementById('importFromDate').value;
         const toDate = document.getElementById('importToDate').value;
+        
+        console.log('From date:', fromDate);
+        console.log('To date:', toDate);
         
         if (!fromDate || !toDate) {
             alert('Vennligst velg både fra- og til-dato');
             return;
         }
         
+        console.log('Sending request to /api/import/calendar');
         const response = await fetch('/api/import/calendar', {
             method: 'POST',
             headers: {
@@ -984,6 +1000,8 @@ async function startImport() {
                 to_date: toDate
             })
         });
+        
+        console.log('Response status:', response.status);
         
         if (response.ok) {
             const result = await response.json();
