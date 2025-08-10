@@ -328,6 +328,10 @@ def determine_activity_types(summary):
         activities.append('Stevne')
     elif 'baneskyting' in summary_lower or 'bane' in summary_lower:
         activities.append('Baneskyting')
+    elif '100m' in summary_lower or '100 m' in summary_lower:
+        activities.append('100m')
+    elif '200m' in summary_lower or '200 m' in summary_lower:
+        activities.append('200m')
     else:
         activities.append('Annet')
     
@@ -360,7 +364,9 @@ def get_color_for_activity(activity_type):
         'Annet': '#6B7280',
         'Stevne': '#8B5CF6',
         'Uavklart': '#EF4444',
-        'Udefinert': '#EF4444'
+        'Udefinert': '#EF4444',
+        '100m': '#FF6B6B',
+        '200m': '#4ECDC4'
     }
     return colors.get(activity_type, '#6B7280')
 

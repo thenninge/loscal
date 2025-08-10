@@ -351,6 +351,8 @@ body {
 .list-item.Åpen-for-alle { border-left-color: #FF6B6B; }
 .list-item.Stevne { border-left-color: #8B5CF6; }
 .list-item.Annet { border-left-color: #6B7280; }
+.list-item[class*="100m"] { border-left-color: #FF6B6B; }
+.list-item[class*="200m"] { border-left-color: #4ECDC4; }
 
 .item-content {
     width: 100%;
@@ -462,6 +464,8 @@ body {
 .activity-badge.Åpen-for-alle { background: #FF6B6B; }
 .activity-badge.Stevne { background: #8B5CF6; }
 .activity-badge.Annet { background: #6B7280; }
+.activity-badge[class*="100m"] { background: #FF6B6B; }
+.activity-badge[class*="200m"] { background: #4ECDC4; }
 
 .item-details {
     color: #6c757d;
