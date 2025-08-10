@@ -696,6 +696,15 @@ function createPinDialog() {
 
 function verifyPin() {
     const pinInput = document.getElementById('pinInput');
+    
+    console.log('PIN Input element:', pinInput);
+    console.log('PIN Input value:', pinInput ? pinInput.value : 'Element not found');
+    
+    if (!pinInput) {
+        console.error('PIN input element not found!');
+        return;
+    }
+    
     const enteredPin = pinInput.value;
     const correctPin = '0406';
     
