@@ -825,17 +825,26 @@ function toggleAdminMode() {
 function updateUIForAdminMode() {
     const adminControls = document.getElementById('adminModeControls');
     const adminBtn = document.getElementById('adminBtn');
+    const activityCounterMain = document.getElementById('activityCounterMain');
     
     if (adminMode) {
         adminControls.classList.remove('hidden');
         adminBtn.style.background = '#b91c1c';
         adminBtn.innerHTML = '<i class="fas fa-user-shield"></i>';
         makeActivitiesEditable();
+        // Show activity counter in main view
+        if (activityCounterMain) {
+            activityCounterMain.classList.remove('hidden');
+        }
     } else {
         adminControls.classList.add('hidden');
         adminBtn.style.background = '#e74c3c';
         adminBtn.innerHTML = '<i class="fas fa-cog"></i>';
         removeEditableActivities();
+        // Hide activity counter in main view
+        if (activityCounterMain) {
+            activityCounterMain.classList.add('hidden');
+        }
     }
     
     // Re-render current view to show/hide delete buttons
@@ -1244,7 +1253,7 @@ function updateActivityCounter() {
 
 function updateActivityCount() {
     const count = openingHours ? openingHours.length : 0;
-    const counterElements = document.querySelectorAll('#activityCount');
+    const counterElements = document.querySelectorAll('#activityCount, #activityCountMain');
     counterElements.forEach(element => {
         element.textContent = count;
     });

@@ -800,17 +800,26 @@ function toggleAdminMode() {
 function updateUIForAdminMode() {
     const adminControls = document.getElementById('adminModeControls');
     const adminBtn = document.getElementById('adminBtn');
+    const activityCounterMain = document.getElementById('activityCounterMain');
     
     if (adminMode) {
         adminControls.classList.remove('hidden');
         adminBtn.style.background = '#b91c1c';
         adminBtn.innerHTML = '<i class="fas fa-user-shield"></i>';
         makeActivitiesEditable();
+        // Show activity counter in main view
+        if (activityCounterMain) {
+            activityCounterMain.classList.remove('hidden');
+        }
     } else {
         adminControls.classList.add('hidden');
         adminBtn.style.background = '#e74c3c';
         adminBtn.innerHTML = '<i class="fas fa-cog"></i>';
         removeEditableActivities();
+        // Hide activity counter in main view
+        if (activityCounterMain) {
+            activityCounterMain.classList.add('hidden');
+        }
     }
 }
 
@@ -1154,6 +1163,12 @@ function updateActivityCounter() {
     const counter = document.getElementById('activityCount');
     if (counter) {
         counter.textContent = openingHours ? openingHours.length : 0;
+    }
+    
+    // Also update the main activity counter
+    const mainCounter = document.getElementById('activityCountMain');
+    if (mainCounter) {
+        mainCounter.textContent = openingHours ? openingHours.length : 0;
     }
 }
 
