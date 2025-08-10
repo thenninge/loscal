@@ -100,6 +100,42 @@ def debug_ical():
             'content_length': 0
         })
 
+@app.route('/debug/database')
+def debug_database():
+    """Test database connectivity without changing anything"""
+    try:
+        print("Debug database endpoint called")
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        
+        # Test if table exists
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='activities'")
+        table_exists = cursor.fetchone() is not None
+        
+        # Test if we can write (without actually writing)
+        cursor.execute("SELECT COUNT(*) FROM activities")
+        count = cursor.fetchone()[0]
+        
+        conn.close()
+        
+        return jsonify({
+            'database_path': DB_PATH,
+            'is_vercel': IS_VERCEL,
+            'table_exists': table_exists,
+            'activity_count': count,
+            'status': 'Database connection successful'
+        })
+    except Exception as e:
+        print(f"Database debug error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'database_path': DB_PATH,
+            'is_vercel': IS_VERCEL,
+            'error': str(e),
+            'status': 'Database connection failed'
+        })
+
 @app.route('/api/activities', methods=['OPTIONS'])
 def handle_options():
     return '', 200
