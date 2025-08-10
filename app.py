@@ -184,6 +184,7 @@ def import_calendar():
         cursor = conn.cursor()
         
         imported_count = 0
+        updated_count = 0
         for event in events:
             # Check if event already exists
             cursor.execute('''
@@ -191,7 +192,25 @@ def import_calendar():
                 WHERE date = ? AND startTime = ? AND endTime = ?
             ''', (event['date'], event['startTime'], event['endTime']))
             
-            if not cursor.fetchone():
+            existing_activity = cursor.fetchone()
+            
+            if existing_activity:
+                # Update existing activity with new data
+                cursor.execute('''
+                    UPDATE activities 
+                    SET dayOfWeek = ?, activities = ?, colors = ?, comment = ?, rangeOfficer = ?, updated_at = CURRENT_TIMESTAMP
+                    WHERE id = ?
+                ''', (
+                    event['dayOfWeek'],
+                    json.dumps(event['activities']),
+                    json.dumps(event['colors']),
+                    event['comment'],
+                    event['rangeOfficer'],
+                    existing_activity[0]
+                ))
+                updated_count += 1
+            else:
+                # Insert new activity
                 cursor.execute('''
                     INSERT INTO activities (id, date, dayOfWeek, startTime, endTime, 
                                           activities, colors, comment, rangeOfficer, created_at, updated_at)
@@ -212,10 +231,20 @@ def import_calendar():
         conn.commit()
         conn.close()
         
+        message_parts = []
+        if imported_count > 0:
+            message_parts.append(f'{imported_count} nye aktiviteter importert')
+        if updated_count > 0:
+            message_parts.append(f'{updated_count} eksisterende aktiviteter oppdatert')
+        
+        if not message_parts:
+            message_parts.append('Ingen endringer')
+        
         return jsonify({
             'success': True,
-            'message': f'Suksess! {imported_count} nye aktiviteter importert fra Lorenskog Skytterlag kalender',
-            'imported_count': imported_count
+            'message': f'Suksess! {", ".join(message_parts)} fra Lorenskog Skytterlag kalender',
+            'imported_count': imported_count,
+            'updated_count': updated_count
         })
         
     except requests.RequestException as e:
