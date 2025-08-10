@@ -895,8 +895,8 @@ def extract_range_officer(summary):
     """Extract range officer from summary"""
     print(f"🔍 Backend extract_range_officer called with: {summary}")
     
-    # Extract person name from summary (e.g., "Thomas Bogdahl - Standplassleder")
-    match = re.match(r'^([^-]+)\s*-\s*', summary)
+    # Extract person name from summary (e.g., "Thomas Bogdahl - Standplassleder", "Jan-Erik Hansen - Standplassleder")
+    match = re.match(r'^(.+?)\s*-\s*', summary)
     if not match:
         print(f"❌ Backend: No match found for: {summary}")
         return 'Ikke satt'
