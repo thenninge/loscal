@@ -192,10 +192,21 @@ def get_activities():
                 # If no activities found and we're on Vercel, add some test data
         if not activities and IS_VERCEL:
             print("Adding test activities for Vercel")
+            # Create test activities with future dates
+            from datetime import datetime, timedelta
+            today = datetime.now()
+            
+            # Get next Monday and create test activities for the week
+            days_until_monday = (7 - today.weekday()) % 7
+            if days_until_monday == 0:
+                days_until_monday = 7  # If today is Monday, go to next Monday
+            
+            next_monday = today + timedelta(days=days_until_monday)
+            
             test_activities = [
                 {
                     'id': 'test-1',
-                    'date': '2025-01-20',
+                    'date': next_monday.strftime('%Y-%m-%d'),
                     'dayOfWeek': 'Mandag',
                     'startTime': '09:00',
                     'endTime': '17:00',
@@ -206,7 +217,7 @@ def get_activities():
                 },
                 {
                     'id': 'test-2',
-                    'date': '2025-01-21',
+                    'date': (next_monday + timedelta(days=1)).strftime('%Y-%m-%d'),
                     'dayOfWeek': 'Tirsdag',
                     'startTime': '10:00',
                     'endTime': '16:00',
@@ -217,7 +228,7 @@ def get_activities():
                 },
                 {
                     'id': 'test-3',
-                    'date': '2025-01-22',
+                    'date': (next_monday + timedelta(days=2)).strftime('%Y-%m-%d'),
                     'dayOfWeek': 'Onsdag',
                     'startTime': '14:00',
                     'endTime': '20:00',
