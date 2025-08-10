@@ -189,59 +189,8 @@ def get_activities():
                 'rangeOfficer': row[9]
             })
         
-                # If no activities found and we're on Vercel, add some test data
-        if not activities and IS_VERCEL:
-            print("Adding test activities for Vercel")
-            # Create test activities with future dates
-            from datetime import datetime, timedelta
-            today = datetime.now()
-            
-            # Get next Monday and create test activities for the week
-            days_until_monday = (7 - today.weekday()) % 7
-            if days_until_monday == 0:
-                days_until_monday = 7  # If today is Monday, go to next Monday
-            
-            next_monday = today + timedelta(days=days_until_monday)
-            
-            test_activities = [
-                {
-                    'id': 'test-1',
-                    'date': next_monday.strftime('%Y-%m-%d'),
-                    'dayOfWeek': 'Mandag',
-                    'startTime': '09:00',
-                    'endTime': '17:00',
-                    'activities': ['Jeger'],
-                    'colors': ['#228B22'],
-                    'comment': 'Test-aktivitet: Jegerskyting mandag',
-                    'rangeOfficer': 'Test Person 1'
-                },
-                {
-                    'id': 'test-2',
-                    'date': (next_monday + timedelta(days=1)).strftime('%Y-%m-%d'),
-                    'dayOfWeek': 'Tirsdag',
-                    'startTime': '10:00',
-                    'endTime': '16:00',
-                    'activities': ['DFS'],
-                    'colors': ['#FFFFFF'],
-                    'comment': 'Test-aktivitet: DFS trening tirsdag',
-                    'rangeOfficer': 'Test Person 2'
-                },
-                {
-                    'id': 'test-3',
-                    'date': (next_monday + timedelta(days=2)).strftime('%Y-%m-%d'),
-                    'dayOfWeek': 'Onsdag',
-                    'startTime': '14:00',
-                    'endTime': '20:00',
-                    'activities': ['Pistol'],
-                    'colors': ['#F59E0B'],
-                    'comment': 'Test-aktivitet: Pistolskyting onsdag',
-                    'rangeOfficer': 'Test Person 3'
-                }
-            ]
-            activities = test_activities
-            print(f"Added {len(test_activities)} test activities")
-        else:
-            print("No test activities added - using existing data")
+                # Return activities as-is - database is working properly now
+        print(f"Returning {len(activities)} activities from database")
         
         return jsonify(activities)
     except Exception as e:
