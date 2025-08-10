@@ -355,8 +355,8 @@ def determine_activity_types(summary, day_of_week=None):
     if '200m' in summary_lower or '200 m' in summary_lower:
         activities.append('200m')
     
-    # Auto-categorize based on day of week if no specific activities found
-    if day_of_week and len(activities) == 0:
+    # Auto-categorize based on day of week if no specific activities found (excluding Uavklart)
+    if day_of_week and len([a for a in activities if a != 'Uavklart']) == 0:
         day_activities = {
             'Mandag': ['DFS', '100m', '200m'],
             'Tirsdag': ['Pistol', '100m'],
