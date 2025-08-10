@@ -67,13 +67,32 @@ init_db()
 def index():
     return render_template('index.html')
 
+@app.route('/debug/static')
+def debug_static():
+    import os
+    static_dir = 'static'
+    if os.path.exists(static_dir):
+        files = os.listdir(static_dir)
+        return jsonify({
+            'static_dir_exists': True,
+            'files': files
+        })
+    else:
+        return jsonify({
+            'static_dir_exists': False,
+            'files': []
+        })
+
 @app.route('/api/activities', methods=['OPTIONS'])
 def handle_options():
     return '', 200
 
 @app.route('/static/<path:filename>')
 def static_files(filename):
-    return send_from_directory('static', filename)
+    try:
+        return send_from_directory('static', filename)
+    except FileNotFoundError:
+        return "File not found", 404
 
 # API Endpoints
 @app.route('/api/activities', methods=['GET'])
