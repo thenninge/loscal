@@ -10,8 +10,8 @@ from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 import pickle
 import os.path
-import psycopg2
-from psycopg2.extras import RealDictCursor
+import pg8000
+from pg8000 import Connection
 
 app = Flask(__name__)
 
@@ -38,7 +38,20 @@ DATABASE_URL = "postgresql://postgres.toofqfonichtzexpuvzc:sauer200STR!!@aws-0-e
 def get_db_connection():
     """Get database connection"""
     try:
-        conn = psycopg2.connect(DATABASE_URL)
+        # Parse connection string for pg8000
+        # postgresql://postgres.toofqfonichtzexpuvzc:password@aws-0-eu-north-1.pooler.supabase.com:6543/postgres
+        parts = DATABASE_URL.replace('postgresql://', '').split('@')
+        user_pass = parts[0].split(':')
+        host_port_db = parts[1].split('/')
+        host_port = host_port_db[0].split(':')
+        
+        conn = pg8000.Connection(
+            user=user_pass[0],
+            password=user_pass[1],
+            host=host_port[0],
+            port=int(host_port[1]),
+            database=host_port_db[1]
+        )
         return conn
     except Exception as e:
         print(f"Database connection error: {str(e)}")
@@ -189,7 +202,7 @@ def get_activities():
         if not conn:
             return jsonify({'success': False, 'error': 'Database connection failed'}), 500
             
-        cursor = conn.cursor(cursor_factory=RealDictCursor)
+        cursor = conn.cursor()
         cursor.execute('SELECT * FROM activities ORDER BY date, startTime')
         rows = cursor.fetchall()
         conn.close()
@@ -198,16 +211,16 @@ def get_activities():
         activities = []
         for row in rows:
             activities.append({
-                'id': row['id'],
-                'iCalUID': row['icaluid'],
-                'date': row['date'],
-                'dayOfWeek': row['dayofweek'],
-                'startTime': row['starttime'],
-                'endTime': row['endtime'],
-                'activities': row['activities'],
-                'colors': row['colors'],
-                'comment': row['comment'],
-                'rangeOfficer': row['rangeofficer']
+                'id': row[0],
+                'iCalUID': row[1],
+                'date': row[2],
+                'dayOfWeek': row[3],
+                'startTime': row[4],
+                'endTime': row[5],
+                'activities': row[6],
+                'colors': row[7],
+                'comment': row[8],
+                'rangeOfficer': row[9]
             })
         
         print(f"Returning {len(activities)} activities from database")
