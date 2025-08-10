@@ -1200,6 +1200,13 @@ async function startImport() {
             return;
         }
         
+        // Show loading overlay and close admin modal
+        const loadingOverlay = document.getElementById('importLoadingOverlay');
+        if (loadingOverlay) {
+            loadingOverlay.classList.remove('hidden');
+        }
+        closeAdminModal();
+        
         const response = await fetch('/api/import/calendar', {
             method: 'POST',
             headers: {
@@ -1212,9 +1219,17 @@ async function startImport() {
             })
         });
         
+        // Hide loading overlay
+        if (loadingOverlay) {
+            loadingOverlay.classList.add('hidden');
+        }
+        
         if (response.ok) {
             const result = await response.json();
-            alert(`Import fullført! ${result.imported_count} aktiviteter importert.`);
+            
+            // Show success message
+            const message = `Import fullført! ${result.imported_count} aktiviteter importert.`;
+            showMessage(message, 'success');
             
             // Reload data
             await loadData();
@@ -1230,11 +1245,17 @@ async function startImport() {
         } else {
             const errorData = await response.json().catch(() => ({ error: 'Ukjent feil' }));
             console.error('Import error response:', errorData);
-            alert(`Feil ved import av kalender: ${errorData.error || 'Ukjent feil'}`);
+            showMessage(`Feil ved import av kalender: ${errorData.error || 'Ukjent feil'}`, 'error');
         }
     } catch (error) {
+        // Hide loading overlay on error
+        const loadingOverlay = document.getElementById('importLoadingOverlay');
+        if (loadingOverlay) {
+            loadingOverlay.classList.add('hidden');
+        }
+        
         console.error('Error importing calendar:', error);
-        alert(`Feil ved import av kalender: ${error.message}`);
+        showMessage(`Feil ved import av kalender: ${error.message}`, 'error');
     }
 }
 
@@ -1855,6 +1876,42 @@ function updateImportPeriodDisplay() {
             console.error('Display element not found');
         }
     }
+}
+
+function showMessage(message, type = 'info') {
+    // Remove existing message
+    const existingMessage = document.getElementById('message-overlay');
+    if (existingMessage) {
+        existingMessage.remove();
+    }
+    
+    // Create message overlay
+    const messageOverlay = document.createElement('div');
+    messageOverlay.id = 'message-overlay';
+    messageOverlay.className = 'message-overlay';
+    
+    const messageContent = document.createElement('div');
+    messageContent.className = `message-content message-${type}`;
+    
+    const icon = document.createElement('i');
+    icon.className = type === 'success' ? 'fas fa-check-circle' : 
+                    type === 'error' ? 'fas fa-exclamation-circle' : 
+                    'fas fa-info-circle';
+    
+    const text = document.createElement('span');
+    text.textContent = message;
+    
+    messageContent.appendChild(icon);
+    messageContent.appendChild(text);
+    messageOverlay.appendChild(messageContent);
+    document.body.appendChild(messageOverlay);
+    
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+        if (messageOverlay.parentNode) {
+            messageOverlay.remove();
+        }
+    }, 5000);
 }
 
 // Add some CSS for calendar day headers
