@@ -346,6 +346,7 @@ body {
 .list-item.Pistol { border-left-color: #F59E0B; }
 .list-item.Storviltprøve { border-left-color: #10B981; }
 .list-item.Uavklart { border-left-color: #EF4444; }
+.list-item.Udefinert { border-left-color: #EF4444; }
 .list-item.Åpen-for-alle { border-left-color: #FF6B6B; }
 .list-item.Stevne { border-left-color: #8B5CF6; }
 .list-item.Annet { border-left-color: #6B7280; }
@@ -355,6 +356,7 @@ body {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 0.5rem;
+    position: relative;
 }
 
 .item-date {
@@ -370,6 +372,28 @@ body {
     border-radius: 20px;
     font-size: 0.9rem;
     font-weight: 500;
+}
+
+.delete-btn {
+    background: #dc2626;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 0.25rem 0.5rem;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: all 0.2s ease;
+    opacity: 0.7;
+}
+
+.delete-btn:hover {
+    background: #b91c1c;
+    opacity: 1;
+    transform: scale(1.05);
+}
+
+.delete-btn i {
+    font-size: 0.75rem;
 }
 
 .item-activity {
@@ -393,6 +417,7 @@ body {
 .activity-badge.Pistol { background: #F59E0B; }
 .activity-badge.Storviltprøve { background: #10B981; }
 .activity-badge.Uavklart { background: #EF4444; }
+.activity-badge.Udefinert { background: #EF4444; }
 .activity-badge.Åpen-for-alle { background: #FF6B6B; }
 .activity-badge.Stevne { background: #8B5CF6; }
 .activity-badge.Annet { background: #6B7280; }

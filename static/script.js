@@ -439,6 +439,9 @@ function createListItem(item) {
             <div class="item-header">
                 <div class="item-date">${formattedDate} (${item.dayOfWeek})</div>
                 <div class="item-time">${item.startTime} - ${item.endTime}</div>
+                <button class="delete-btn" onclick="deleteActivityById('${item.id}')" title="Slett aktivitet">
+                    <i class="fas fa-trash"></i>
+                </button>
             </div>
             <div class="item-activity">
                 ${activityBadges}
@@ -1219,6 +1222,38 @@ async function deleteActivity() {
             console.error('Error deleting activity:', error);
             alert('Feil ved sletting av aktivitet');
         }
+    }
+}
+
+async function deleteActivityById(activityId) {
+    if (!confirm('Er du sikker på at du vil slette denne aktiviteten?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/activities/${activityId}`, {
+            method: 'DELETE'
+        });
+        
+        if (response.ok) {
+            // Remove from local array
+            const index = openingHours.findIndex(item => item.id === activityId);
+            if (index > -1) {
+                openingHours.splice(index, 1);
+            }
+            
+            // Update UI
+            renderList();
+            renderCalendar();
+            updateActivityCounter();
+            
+            alert('Aktivitet slettet!');
+        } else {
+            alert('Feil ved sletting av aktivitet');
+        }
+    } catch (error) {
+        console.error('Error deleting activity:', error);
+        alert('Feil ved sletting av aktivitet');
     }
 }
 

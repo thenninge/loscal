@@ -273,50 +273,60 @@ def convert_event_to_activity(event, day_names):
     start_dt = event['start']
     end_dt = event.get('end', start_dt + timedelta(hours=1))
     
-    # Determine activity type based on summary
-    summary = event['summary'].lower()
-    activity_type = determine_activity_type(summary)
-    if not activity_type:
-        return None
+    # Determine activity types based on summary
+    summary = event['summary']
+    activity_types = determine_activity_types(summary)
+    if not activity_types:
+        return None  # Skip maintenance events
     
     # Extract range officer
-    range_officer = extract_range_officer(event['summary'])
+    range_officer = extract_range_officer(summary)
+    
+    # Get colors for multiple activities (use first one as primary)
+    primary_color = get_color_for_activity(activity_types[0])
     
     return {
-        'id': f"ical-{start_dt.strftime('%Y%m%d%H%M%S')}-{hash(event['summary']) % 10000}",
+        'id': f"ical-{start_dt.strftime('%Y%m%d%H%M%S')}-{hash(summary) % 10000}",
         'date': start_dt.strftime('%Y-%m-%d'),
         'dayOfWeek': day_names[(start_dt.weekday()) % 7],
         'startTime': start_dt.strftime('%H:%M'),
         'endTime': end_dt.strftime('%H:%M'),
-        'activities': [activity_type],
-        'colors': get_color_for_activity(activity_type),
-        'comment': f"Importert fra Lorenskog Skytterlag: {event['summary']}",
+        'activities': activity_types,
+        'colors': primary_color,
+        'comment': f"Importert fra Lorenskog Skytterlag: {summary}",
         'rangeOfficer': range_officer
     }
 
-def determine_activity_type(summary):
-    """Determine activity type from summary"""
+def determine_activity_types(summary):
+    """Determine activity types from summary - can return multiple types"""
     summary_lower = summary.lower()
+    activities = []
     
-    # Check for "Uavklart" first
-    if 'ikke satt' in summary_lower or 'uavklart' in summary_lower:
-        return 'Uavklart'
+    # Skip maintenance events
+    if any(word in summary_lower for word in ['opplåsing', 'klargjøring', 'låsing', 'åpning', 'stengning']):
+        return []
+    
+    # Check for "Ledig" or "Ikke satt" - mark as Udefinert
+    if any(word in summary_lower for word in ['ledig', 'ikke satt', 'uavklart']):
+        activities.append('Udefinert')
     
     # Check other activity types
     if 'jaktskyting' in summary_lower or 'jakt' in summary_lower:
-        return 'Jaktskyting'
+        activities.append('Jaktskyting')
     elif 'dfs' in summary_lower:
-        return 'DFS'
+        activities.append('DFS')
     elif 'pistol' in summary_lower:
-        return 'Pistol'
+        activities.append('Pistol')
     elif 'storviltprøve' in summary_lower or 'storvilt' in summary_lower:
-        return 'Storviltprøve'
+        activities.append('Storviltprøve')
     elif 'stevne' in summary_lower:
-        return 'Stevne'
+        activities.append('Stevne')
     elif 'baneskyting' in summary_lower or 'bane' in summary_lower:
-        return 'Baneskyting'
+        activities.append('Baneskyting')
     else:
-        return 'Annet'
+        activities.append('Annet')
+    
+    return activities
 
 def extract_range_officer(summary):
     """Extract range officer from summary"""
@@ -344,7 +354,8 @@ def get_color_for_activity(activity_type):
         'Storviltprøve': '#10B981',
         'Annet': '#6B7280',
         'Stevne': '#8B5CF6',
-        'Uavklart': '#EF4444'
+        'Uavklart': '#EF4444',
+        'Udefinert': '#EF4444'
     }
     return colors.get(activity_type, '#6B7280')
 
