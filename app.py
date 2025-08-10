@@ -410,42 +410,52 @@ def import_calendar():
         
         imported_count = 0
         updated_count = 0
-        for event in events:
-            # Use INSERT ... ON CONFLICT to handle duplicates properly
-            cursor.execute('''
-                INSERT INTO activities (id, date, dayOfWeek, startTime, endTime, 
-                                      activities, colors, comment, rangeOfficer, created_at, updated_at)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-                ON CONFLICT (id) DO UPDATE SET
-                    date = EXCLUDED.date,
-                    dayOfWeek = EXCLUDED.dayOfWeek,
-                    startTime = EXCLUDED.startTime,
-                    endTime = EXCLUDED.endTime,
-                    activities = EXCLUDED.activities,
-                    colors = EXCLUDED.colors,
-                    comment = EXCLUDED.comment,
-                    rangeOfficer = EXCLUDED.rangeOfficer,
-                    updated_at = CURRENT_TIMESTAMP
-            ''', (
-                event['id'],
-                event['date'],
-                event['dayOfWeek'],
-                event['startTime'],
-                event['endTime'],
-                json.dumps(event['activities']),
-                json.dumps(event['colors']),
-                event['comment'],
-                event['rangeOfficer']
-            ))
-            
-            # Check if this was an insert or update by checking if row was affected
-            if cursor.rowcount > 0:
-                imported_count += 1
-            else:
-                updated_count += 1
         
-        conn.commit()
-        conn.close()
+        try:
+            for event in events:
+                # Use INSERT ... ON CONFLICT to handle duplicates properly
+                cursor.execute('''
+                    INSERT INTO activities (id, date, dayOfWeek, startTime, endTime, 
+                                          activities, colors, comment, rangeOfficer, created_at, updated_at)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                    ON CONFLICT (id) DO UPDATE SET
+                        date = EXCLUDED.date,
+                        dayOfWeek = EXCLUDED.dayOfWeek,
+                        startTime = EXCLUDED.startTime,
+                        endTime = EXCLUDED.endTime,
+                        activities = EXCLUDED.activities,
+                        colors = EXCLUDED.colors,
+                        comment = EXCLUDED.comment,
+                        rangeOfficer = EXCLUDED.rangeOfficer,
+                        updated_at = CURRENT_TIMESTAMP
+                ''', (
+                    event['id'],
+                    event['date'],
+                    event['dayOfWeek'],
+                    event['startTime'],
+                    event['endTime'],
+                    json.dumps(event['activities']),
+                    json.dumps(event['colors']),
+                    event['comment'],
+                    event['rangeOfficer']
+                ))
+                
+                # Check if this was an insert or update by checking if row was affected
+                if cursor.rowcount > 0:
+                    imported_count += 1
+                else:
+                    updated_count += 1
+            
+            # Commit the transaction
+            conn.commit()
+            
+        except Exception as e:
+            # Rollback on error
+            conn.rollback()
+            print(f"Database error during import: {str(e)}")
+            raise e
+        finally:
+            conn.close()
         
         message_parts = []
         if imported_count > 0:
