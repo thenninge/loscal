@@ -309,6 +309,10 @@ function setupEventListeners() {
         switchAdminPanel('checkDuplicatesPanel');
         await checkForDuplicates();
     });
+    document.getElementById('debugBtn').addEventListener('click', () => {
+        switchAdminPanel('debugPanel');
+        updateActivityCount();
+    });
     
     // Import calendar button
     document.getElementById('startImportBtn').addEventListener('click', async () => await startImport());
@@ -337,6 +341,9 @@ function setupEventListeners() {
     
     // Delete activity button
     document.getElementById('deleteActivityBtn').addEventListener('click', async () => await deleteActivity());
+    
+    // Delete all activities button
+    document.getElementById('deleteAllActivitiesBtn').addEventListener('click', async () => await deleteAllActivities());
     
     // Filter checkboxes
     document.querySelectorAll('.filter-item input').forEach(checkbox => {
@@ -1051,6 +1058,14 @@ function updateActivityCounter() {
     }
 }
 
+function updateActivityCount() {
+    const count = openingHours ? openingHours.length : 0;
+    const counterElements = document.querySelectorAll('#activityCount');
+    counterElements.forEach(element => {
+        element.textContent = count;
+    });
+}
+
 
 
 async function addNewOpening(e) {
@@ -1344,6 +1359,91 @@ function showDeleteConfirmation() {
         });
         
         overlay.querySelector('#cancelDelete').addEventListener('click', () => {
+            document.body.removeChild(overlay);
+            resolve(false);
+        });
+        
+        // Handle escape key
+        const handleEscape = (e) => {
+            if (e.key === 'Escape') {
+                document.body.removeChild(overlay);
+                document.removeEventListener('keydown', handleEscape);
+                resolve(false);
+            }
+        };
+        document.addEventListener('keydown', handleEscape);
+        
+        // Handle click outside modal
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+                document.body.removeChild(overlay);
+                document.removeEventListener('keydown', handleEscape);
+                resolve(false);
+            }
+        });
+    });
+}
+
+async function deleteAllActivities() {
+    if (!await showDeleteAllConfirmation()) {
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/activities/all', {
+            method: 'DELETE'
+        });
+        
+        if (response.ok) {
+            // Clear local array
+            openingHours.length = 0;
+            
+            // Update UI
+            renderList();
+            renderCalendar();
+            updateActivityCounter();
+            
+            alert('Alle aktiviteter er slettet!');
+        } else {
+            alert('Feil ved sletting av alle aktiviteter');
+        }
+    } catch (error) {
+        console.error('Error deleting all activities:', error);
+        alert('Feil ved sletting av alle aktiviteter');
+    }
+}
+
+function showDeleteAllConfirmation() {
+    return new Promise((resolve) => {
+        // Create modal overlay
+        const overlay = document.createElement('div');
+        overlay.className = 'delete-confirmation-overlay';
+        overlay.innerHTML = `
+            <div class="delete-confirmation-modal">
+                <div class="delete-confirmation-content">
+                    <h3>Slett alle aktiviteter</h3>
+                    <p>Er du sikker på at du vil slette ALLE aktiviteter? Dette kan ikke angres!</p>
+                    <div class="delete-confirmation-buttons">
+                        <button class="btn btn-secondary" id="cancelDeleteAll">Avbryt</button>
+                        <button class="btn btn-danger" id="confirmDeleteAll" autofocus>Slett alle</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(overlay);
+        
+        // Focus on delete button by default
+        const deleteButton = overlay.querySelector('#confirmDeleteAll');
+        deleteButton.focus();
+        
+        // Handle button clicks
+        overlay.querySelector('#confirmDeleteAll').addEventListener('click', () => {
+            document.body.removeChild(overlay);
+            resolve(true);
+        });
+        
+        overlay.querySelector('#cancelDeleteAll').addEventListener('click', () => {
             document.body.removeChild(overlay);
             resolve(false);
         });

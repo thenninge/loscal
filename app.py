@@ -451,5 +451,27 @@ def cleanup_maintenance_events():
         'message': f'Fjernet {deleted_count} vedlikeholdsevents'
     })
 
+@app.route('/api/activities/all', methods=['DELETE'])
+def delete_all_activities():
+    """Delete all activities from database"""
+    conn = sqlite3.connect('skytebane.db')
+    cursor = conn.cursor()
+    
+    # Get count before deletion
+    cursor.execute('SELECT COUNT(*) FROM activities')
+    count = cursor.fetchone()[0]
+    
+    # Delete all activities
+    cursor.execute('DELETE FROM activities')
+    
+    conn.commit()
+    conn.close()
+    
+    return jsonify({
+        'success': True,
+        'deleted_count': count,
+        'message': f'Slettet alle {count} aktiviteter'
+    })
+
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=8000) 
