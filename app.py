@@ -282,8 +282,8 @@ def convert_event_to_activity(event, day_names):
     # Extract range officer
     range_officer = extract_range_officer(summary)
     
-    # Get colors for multiple activities (use first one as primary)
-    primary_color = get_color_for_activity(activity_types[0])
+    # Get colors for multiple activities
+    colors = [get_color_for_activity(activity_type) for activity_type in activity_types]
     
     return {
         'id': f"ical-{start_dt.strftime('%Y%m%d%H%M%S')}-{hash(summary) % 10000}",
@@ -292,7 +292,7 @@ def convert_event_to_activity(event, day_names):
         'startTime': start_dt.strftime('%H:%M'),
         'endTime': end_dt.strftime('%H:%M'),
         'activities': activity_types,
-        'colors': primary_color,
+        'colors': colors,
         'comment': f"Importert fra Lorenskog Skytterlag: {summary}",
         'rangeOfficer': range_officer
     }
@@ -315,24 +315,26 @@ def determine_activity_types(summary):
     # Check for "Ledig" or "Ikke satt" - mark as Uavklart
     if any(word in summary_lower for word in ['ledig', 'ikke satt', 'uavklart']):
         activities.append('Uavklart')
-        return activities  # Return early, don't add other categories
+        # Don't return early - continue to check for other activity types
     
     # Check other activity types
     if 'jaktskyting' in summary_lower or 'jakt' in summary_lower:
         activities.append('Jaktskyting')
-    elif 'dfs' in summary_lower:
+    if 'dfs' in summary_lower:
         activities.append('DFS')
-    elif 'pistol' in summary_lower:
+    if 'pistol' in summary_lower:
         activities.append('Pistol')
-    elif 'storviltprøve' in summary_lower or 'storvilt' in summary_lower:
+    if 'storviltprøve' in summary_lower or 'storvilt' in summary_lower:
         activities.append('Storviltprøve')
-    elif 'baneskyting' in summary_lower or 'bane' in summary_lower:
+    if 'baneskyting' in summary_lower or 'bane' in summary_lower:
         activities.append('Baneskyting')
-    elif '100m' in summary_lower or '100 m' in summary_lower:
+    if '100m' in summary_lower or '100 m' in summary_lower:
         activities.append('100m')
-    elif '200m' in summary_lower or '200 m' in summary_lower:
+    if '200m' in summary_lower or '200 m' in summary_lower:
         activities.append('200m')
-    else:
+    
+    # If no specific activities found, add 'Annet'
+    if len(activities) == 0:
         activities.append('Annet')
     
     return activities

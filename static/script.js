@@ -528,7 +528,7 @@ function renderCalendar() {
                     <div class="day-number">${day}</div>
                     <div class="day-events">
                         ${dayEvents.map(event => `
-                            <div class="day-event" style="background-color: ${event.colors}">
+                            <div class="day-event" style="background-color: ${Array.isArray(event.colors) ? event.colors[0] : event.colors}">
                                 <span class="event-text">${event.startTime} ${event.activities.join(' + ')}</span>
                                 ${adminMode ? `
                                     <button class="calendar-delete-btn" onclick="event.stopPropagation(); deleteActivityById('${event.id}')" title="Slett aktivitet">
