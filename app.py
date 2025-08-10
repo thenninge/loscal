@@ -324,8 +324,6 @@ def determine_activity_types(summary):
         activities.append('Pistol')
     elif 'storviltprøve' in summary_lower or 'storvilt' in summary_lower:
         activities.append('Storviltprøve')
-    elif 'stevne' in summary_lower:
-        activities.append('Stevne')
     elif 'baneskyting' in summary_lower or 'bane' in summary_lower:
         activities.append('Baneskyting')
     elif '100m' in summary_lower or '100 m' in summary_lower:
@@ -362,7 +360,6 @@ def get_color_for_activity(activity_type):
         'Pistol': '#F59E0B',
         'Storviltprøve': '#10B981',
         'Annet': '#6B7280',
-        'Stevne': '#8B5CF6',
         'Uavklart': '#EF4444',
         'Udefinert': '#EF4444',
         '100m': '#FF6B6B',

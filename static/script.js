@@ -453,8 +453,12 @@ function createListItem(item) {
         </div>
     ` : '';
     
+    // Create a safe CSS class name (replace spaces and special chars)
+    const primaryActivity = item.activities[0] || 'Annet';
+    const safeClass = primaryActivity.replace(/[^a-zA-Z0-9]/g, '-');
+    
     return `
-        <div class="list-item ${item.activities[0]}" data-id="${item.id}">
+        <div class="list-item ${safeClass}" data-id="${item.id}">
             ${adminButtons}
             <div class="item-content">
                 <div class="item-header">
