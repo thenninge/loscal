@@ -677,7 +677,7 @@ function createPinDialog() {
             <div class="modal-body">
                 <p>Skriv inn PIN-kode for å få tilgang til admin-panelet:</p>
                 <div class="form-group">
-                    <input type="password" id="pinInput" placeholder="PIN-kode" maxlength="4" autocomplete="off">
+                    <input type="text" id="pinInput" placeholder="PIN-kode" maxlength="4" autocomplete="off" style="background: white; color: black;">
                 </div>
                 <div class="form-actions">
                     <button type="button" class="btn btn-secondary" onclick="closePinDialog()">Avbryt</button>
