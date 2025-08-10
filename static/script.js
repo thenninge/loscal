@@ -712,7 +712,6 @@ function createPinDialog() {
                 <div class="form-actions">
                     <button type="button" class="btn btn-secondary" onclick="closePinDialog()">Avbryt</button>
                     <button type="button" class="btn btn-primary" onclick="verifyPin()">OK</button>
-                    <button type="button" class="btn btn-warning" onclick="testPinInput()">Test Input</button>
                 </div>
             </div>
         </div>
@@ -734,6 +733,18 @@ function createPinDialog() {
             // Test input functionality
             pinInput.addEventListener('input', function(e) {
                 console.log('PIN Input changed:', e.target.value);
+            });
+            
+            pinInput.addEventListener('keydown', function(e) {
+                console.log('PIN Key pressed:', e.key);
+            });
+            
+            pinInput.addEventListener('focus', function(e) {
+                console.log('PIN Input focused');
+            });
+            
+            pinInput.addEventListener('blur', function(e) {
+                console.log('PIN Input blurred, value:', e.target.value);
             });
             
             console.log('Event listener added to PIN input');
@@ -796,25 +807,7 @@ function verifyPin() {
     }, 100);
 }
 
-function testPinInput() {
-    const pinInput = document.getElementById('pinInput');
-    console.log('=== TESTING PIN INPUT ===');
-    console.log('Input element:', pinInput);
-    console.log('Input value:', pinInput ? pinInput.value : 'Element not found');
-    console.log('Input focused:', pinInput ? pinInput === document.activeElement : 'Element not found');
-    console.log('Input disabled:', pinInput ? pinInput.disabled : 'Element not found');
-    console.log('Input readonly:', pinInput ? pinInput.readOnly : 'Element not found');
-    console.log('Input type:', pinInput ? pinInput.type : 'Element not found');
-    console.log('Input maxlength:', pinInput ? pinInput.maxLength : 'Element not found');
-    console.log('=======================');
-    
-    // Try to set a test value
-    if (pinInput) {
-        pinInput.value = '0406';
-        console.log('Set correct PIN "0406"');
-        console.log('New input value:', pinInput.value);
-    }
-}
+
 
 function closePinDialog() {
     const pinDialog = document.getElementById('pinDialog');
