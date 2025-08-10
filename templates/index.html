@@ -284,6 +284,9 @@
                                     <button type="button" id="deleteActivityBtn" class="btn btn-danger" style="display: none;">
                                         <i class="fas fa-trash"></i> Slett aktivitet
                                     </button>
+                                    <button type="button" class="btn btn-secondary" onclick="closeAdminModal()">
+                                        <i class="fas fa-times"></i> Lukk vindu
+                                    </button>
                                 </div>
                             </form>
                         </div>
@@ -343,12 +346,17 @@
                             <div id="duplicatesResult" class="duplicates-result">
                                 <p>Klikk "Sjekk duplikater" for å analysere dataene.</p>
                             </div>
-                            <button id="checkDuplicatesBtn" class="btn btn-secondary">
-                                <i class="fas fa-search"></i> Sjekk duplikater
-                            </button>
-                            <button id="removeDuplicatesBtn" class="btn btn-danger hidden">
-                                <i class="fas fa-trash"></i> Fjern duplikater
-                            </button>
+                            <div class="form-actions">
+                                <button id="checkDuplicatesBtn" class="btn btn-secondary">
+                                    <i class="fas fa-search"></i> Sjekk duplikater
+                                </button>
+                                <button id="removeDuplicatesBtn" class="btn btn-danger hidden">
+                                    <i class="fas fa-trash"></i> Fjern duplikater
+                                </button>
+                                <button type="button" class="btn btn-secondary" onclick="closeAdminModal()">
+                                    <i class="fas fa-times"></i> Lukk vindu
+                                </button>
+                            </div>
                         </div>
                         
 
