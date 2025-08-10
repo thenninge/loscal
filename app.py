@@ -306,7 +306,8 @@ def determine_activity_types(summary):
     maintenance_words = [
         'opplåsing', 'klargjøring', 'låsing', 'åpning', 'stengning',
         'låse opp', 'låse ned', 'åpne', 'stenge', 'lukke',
-        'klargjør', 'klargjøre', 'opplås', 'lås opp', 'lås ned'
+        'klargjør', 'klargjøre', 'opplås', 'lås opp', 'lås ned',
+        'avslutte', 'avslutt', 'låse', 'lås'
     ]
     if any(word in summary_lower for word in maintenance_words):
         return []
@@ -424,12 +425,20 @@ def cleanup_maintenance_events():
     maintenance_words = [
         'opplåsing', 'klargjøring', 'låsing', 'åpning', 'stengning',
         'låse opp', 'låse ned', 'åpne', 'stenge', 'lukke',
-        'klargjør', 'klargjøre', 'opplås', 'lås opp', 'lås ned'
+        'klargjør', 'klargjøre', 'opplås', 'lås opp', 'lås ned',
+        'avslutte', 'avslutt', 'låse', 'lås'
     ]
     
     deleted_count = 0
     for activity_id, comment in activities:
+        # Check both comment and activity ID for maintenance words
+        should_delete = False
         if comment and any(word in comment.lower() for word in maintenance_words):
+            should_delete = True
+        elif any(word in activity_id.lower() for word in maintenance_words):
+            should_delete = True
+            
+        if should_delete:
             cursor.execute('DELETE FROM activities WHERE id = ?', (activity_id,))
             deleted_count += 1
     
