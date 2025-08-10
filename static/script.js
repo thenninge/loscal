@@ -1229,6 +1229,10 @@ async function startImport() {
         if (loadingOverlay) {
             loadingOverlay.classList.remove('hidden');
             console.log('startImport: Loading overlay shown');
+            console.log('startImport: Loading overlay classes:', loadingOverlay.className);
+            console.log('startImport: Loading overlay display style:', window.getComputedStyle(loadingOverlay).display);
+            console.log('startImport: Loading overlay visibility:', window.getComputedStyle(loadingOverlay).visibility);
+            console.log('startImport: Loading overlay z-index:', window.getComputedStyle(loadingOverlay).zIndex);
         } else {
             console.log('startImport: Loading overlay element not found!');
         }
