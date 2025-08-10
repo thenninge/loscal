@@ -374,7 +374,7 @@ body {
 }
 
 .list-item.Jeger { border-left-color: #228B22; }
-.list-item.DFS { border-left-color: #FFFFFF; }
+.list-item.DFS { border-left-color: #8B4513; }
 .list-item.Pistol { border-left-color: #F59E0B; }
 .list-item.PRS { border-left-color: #8B5CF6; }
 .list-item.Leirdue { border-left-color: #EC4899; }
@@ -424,7 +424,7 @@ body {
 }
 
 .activity-badge.Jeger { background: #228B22; }
-.activity-badge.DFS { background: #FFFFFF; color: #333; border: 1px solid #ddd; }
+.activity-badge.DFS { background: #8B4513; color: #fff; border: 1px solid #8B4513; }
 .activity-badge.Pistol { background: #F59E0B; }
 .activity-badge.PRS { background: #8B5CF6; }
 .activity-badge.Leirdue { background: #EC4899; }
