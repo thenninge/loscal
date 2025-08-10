@@ -180,6 +180,58 @@ def debug_ical():
             'content_length': 0
         })
 
+@app.route('/debug/pg8000')
+def debug_pg8000():
+    """Debug pg8000 import and connection"""
+    try:
+        print("Debug pg8000 endpoint called")
+        
+        if not IS_VERCEL:
+            return jsonify({
+                'message': 'Not on Vercel - pg8000 not needed',
+                'is_vercel': IS_VERCEL
+            })
+        
+        # Test pg8000 import
+        print("Testing pg8000 import...")
+        import pg8000
+        print("pg8000 imported successfully")
+        
+        from pg8000.extras import RealDictCursor
+        print("RealDictCursor imported successfully")
+        
+        # Test connection
+        print("Testing connection...")
+        conn = get_db_connection()
+        if conn:
+            print("Connection successful")
+            conn.close()
+            print("Connection closed")
+            return jsonify({
+                'message': 'pg8000 import and connection successful',
+                'is_vercel': IS_VERCEL,
+                'status': 'success'
+            })
+        else:
+            print("Connection failed")
+            return jsonify({
+                'message': 'pg8000 import successful but connection failed',
+                'is_vercel': IS_VERCEL,
+                'status': 'connection_failed'
+            })
+            
+    except Exception as e:
+        print(f"pg8000 debug error: {str(e)}")
+        print(f"Error type: {type(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'error': str(e),
+            'error_type': str(type(e)),
+            'is_vercel': IS_VERCEL,
+            'status': 'error'
+        }), 500
+
 @app.route('/debug/database')
 def debug_database():
     """Test database connectivity without changing anything"""
