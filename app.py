@@ -32,11 +32,13 @@ import os
 IS_VERCEL = os.environ.get('VERCEL') == '1'
 
 if IS_VERCEL:
-    # Use temporary file database for Vercel (more reliable than in-memory)
-    DB_PATH = '/tmp/skytebane.db'
+    # Use in-memory database for Vercel (will be recreated each time, but data comes from calendar import)
+    DB_PATH = ':memory:'
+    print("Using in-memory database for Vercel")
 else:
     # Use file-based database for local development
     DB_PATH = 'skytebane.db'
+    print("Using file-based database for local development")
 
 def init_db():
     """Initialize database - safe to call multiple times"""
@@ -189,7 +191,54 @@ def get_activities():
                 'rangeOfficer': row[9]
             })
         
-                # Return activities as-is - database is working properly now
+                # On Vercel, if no activities found, automatically import from calendar
+        if IS_VERCEL and not activities:
+            print("No activities found on Vercel - auto-importing from calendar")
+            try:
+                # Auto-import from calendar
+                ical_url = "https://calendar.google.com/calendar/ical/2h495fqj8gr9p42361rriptlibc7gf6k%40import.calendar.google.com/public/basic.ics"
+                response = requests.get(ical_url, timeout=10)
+                if response.status_code == 200:
+                    # Import next 30 days of data
+                    from_date = datetime.now().strftime('%Y-%m-%d')
+                    to_date = (datetime.now() + timedelta(days=30)).strftime('%Y-%m-%d')
+                    
+                    imported_activities = parse_ical_data(response.text, from_date, to_date)
+                    
+                    # Save imported activities to database
+                    conn = sqlite3.connect(DB_PATH)
+                    cursor = conn.cursor()
+                    
+                    for activity in imported_activities:
+                        cursor.execute('''
+                            INSERT OR REPLACE INTO activities 
+                            (id, iCalUID, date, dayOfWeek, startTime, endTime, activities, colors, comment, rangeOfficer)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        ''', (
+                            activity['id'],
+                            activity.get('iCalUID', ''),
+                            activity['date'],
+                            activity['dayOfWeek'],
+                            activity['startTime'],
+                            activity['endTime'],
+                            json.dumps(activity['activities']),
+                            json.dumps(activity['colors']),
+                            activity.get('comment', ''),
+                            activity.get('rangeOfficer', '')
+                        ))
+                    
+                    conn.commit()
+                    conn.close()
+                    
+                    activities = imported_activities
+                    print(f"Auto-imported {len(activities)} activities from calendar")
+                else:
+                    print(f"Failed to fetch calendar data: {response.status_code}")
+            except Exception as e:
+                print(f"Error during auto-import: {str(e)}")
+                import traceback
+                traceback.print_exc()
+        
         print(f"Returning {len(activities)} activities from database")
         
         return jsonify(activities)
