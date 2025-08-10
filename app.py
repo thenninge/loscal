@@ -893,18 +893,26 @@ def determine_activity_types(summary, day_of_week=None, auto_categorize=True):
 
 def extract_range_officer(summary):
     """Extract range officer from summary"""
-    # Look for patterns like "Vakt: Navn" or "Standsplassleder: Navn"
-    patterns = [
-        r'vakt:\s*([^,\n]+)',
-        r'standsplassleder:\s*([^,\n]+)',
-        r'leder:\s*([^,\n]+)'
-    ]
+    print(f"🔍 Backend extract_range_officer called with: {summary}")
     
-    for pattern in patterns:
-        match = re.search(pattern, summary, re.IGNORECASE)
-        if match:
-            return match.group(1).strip()
+    # Extract person name from summary (e.g., "Thomas Bogdahl - Standplassleder")
+    match = re.match(r'^([^-]+)\s*-\s*', summary)
+    if not match:
+        print(f"❌ Backend: No match found for: {summary}")
+        return 'Ikke satt'
     
+    person_name = match.group(1).strip()
+    role = summary[match.end():].strip().lower()
+    
+    print(f"📋 Backend: {summary} -> person: {person_name}, role: {role}")
+    
+    # Only set range officer if the role is "standplassleder"
+    # Don't set for "vakt standplass", "klargjøring", etc.
+    if role == 'standplassleder':
+        print(f"✅ Backend: Setting range officer to: {person_name}")
+        return person_name
+    
+    print(f"❌ Backend: Role is not 'standplassleder', returning 'Ikke satt'")
     return 'Ikke satt'
 
 def get_color_for_activity(activity_type):
