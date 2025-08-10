@@ -663,6 +663,16 @@ function showPinDialog() {
 function createPinDialog() {
     console.log('Creating PIN dialog...');
     
+    // Remove any existing PIN dialog first
+    const existingDialog = document.getElementById('pinDialog');
+    if (existingDialog) {
+        existingDialog.remove();
+    }
+    
+    // Remove any existing PIN input elements
+    const existingInputs = document.querySelectorAll('#pinInput');
+    existingInputs.forEach(input => input.remove());
+    
     const pinDialog = document.createElement('div');
     pinDialog.id = 'pinDialog';
     pinDialog.className = 'modal';
