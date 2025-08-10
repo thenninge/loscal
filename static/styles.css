@@ -842,6 +842,11 @@ body {
     gap: 1rem;
     align-items: center;
     margin-top: 1rem;
+    justify-content: flex-end;
+}
+
+.form-actions .btn {
+    min-width: 120px;
 }
 
 

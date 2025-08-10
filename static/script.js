@@ -355,6 +355,9 @@ function setupEventListeners() {
     // Delete all activities button
     document.getElementById('deleteAllActivitiesBtnMain').addEventListener('click', async () => await deleteAllActivities());
     
+    // Close admin modal button
+    document.getElementById('closeAdminModalBtn').addEventListener('click', closeAdminModal);
+    
     // Filter checkboxes
     document.querySelectorAll('.filter-item input').forEach(checkbox => {
         checkbox.addEventListener('change', filterData);
