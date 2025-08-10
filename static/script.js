@@ -754,8 +754,22 @@ function prefillEditForm(activity) {
     
     // Fill form fields with activity data
     document.getElementById('date').value = activity.date;
-    document.getElementById('startTime').value = activity.startTime;
-    document.getElementById('endTime').value = activity.endTime;
+    
+    // Handle new time input format
+    if (activity.startTime) {
+        const [startHours, startMinutes] = activity.startTime.split(':');
+        document.getElementById('startTimeHours').value = startHours;
+        document.getElementById('startTimeMinutes').value = startMinutes;
+        document.getElementById('startTime').value = activity.startTime;
+    }
+    
+    if (activity.endTime) {
+        const [endHours, endMinutes] = activity.endTime.split(':');
+        document.getElementById('endTimeHours').value = endHours;
+        document.getElementById('endTimeMinutes').value = endMinutes;
+        document.getElementById('endTime').value = activity.endTime;
+    }
+    
     document.getElementById('comment').value = activity.comment || '';
     document.getElementById('rangeOfficer').value = activity.rangeOfficer || '';
     
@@ -1542,41 +1556,27 @@ function setupImportDateDefaults() {
 }
 
 function setupTimeInputs() {
-    const startTimeInput = document.getElementById('startTime');
-    const endTimeInput = document.getElementById('endTime');
+    const startTimeHours = document.getElementById('startTimeHours');
+    const startTimeMinutes = document.getElementById('startTimeMinutes');
+    const endTimeHours = document.getElementById('endTimeHours');
+    const endTimeMinutes = document.getElementById('endTimeMinutes');
+    const startTimeHidden = document.getElementById('startTime');
+    const endTimeHidden = document.getElementById('endTime');
     
-    if (startTimeInput) {
-        startTimeInput.addEventListener('input', function() {
-            // Force 24-hour format
-            const time = this.value;
-            if (time) {
-                const [hours, minutes] = time.split(':');
-                const hour24 = parseInt(hours);
-                if (hour24 >= 0 && hour24 <= 23) {
-                    this.value = `${hours.padStart(2, '0')}:${minutes}`;
-                }
-            }
-        });
-        
-        // Set placeholder to show 24-hour format
-        startTimeInput.placeholder = '14:30';
+    function updateHiddenTime(hoursInput, minutesInput, hiddenInput) {
+        const hours = hoursInput.value.padStart(2, '0');
+        const minutes = minutesInput.value.padStart(2, '0');
+        hiddenInput.value = `${hours}:${minutes}`;
     }
     
-    if (endTimeInput) {
-        endTimeInput.addEventListener('input', function() {
-            // Force 24-hour format
-            const time = this.value;
-            if (time) {
-                const [hours, minutes] = time.split(':');
-                const hour24 = parseInt(hours);
-                if (hour24 >= 0 && hour24 <= 23) {
-                    this.value = `${hours.padStart(2, '0')}:${minutes}`;
-                }
-            }
-        });
-        
-        // Set placeholder to show 24-hour format
-        endTimeInput.placeholder = '16:00';
+    if (startTimeHours && startTimeMinutes && startTimeHidden) {
+        startTimeHours.addEventListener('input', () => updateHiddenTime(startTimeHours, startTimeMinutes, startTimeHidden));
+        startTimeMinutes.addEventListener('input', () => updateHiddenTime(startTimeHours, startTimeMinutes, startTimeHidden));
+    }
+    
+    if (endTimeHours && endTimeMinutes && endTimeHidden) {
+        endTimeHours.addEventListener('input', () => updateHiddenTime(endTimeHours, endTimeMinutes, endTimeHidden));
+        endTimeMinutes.addEventListener('input', () => updateHiddenTime(endTimeHours, endTimeMinutes, endTimeHidden));
     }
 }
 

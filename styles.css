@@ -799,6 +799,28 @@ body {
     margin-top: 0.25rem;
 }
 
+.time-input-container {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.time-hours,
+.time-minutes {
+    width: 80px;
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 1rem;
+    text-align: center;
+}
+
+.time-separator {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #333;
+}
+
 /* Utility */
 .hidden {
     display: none !important;
