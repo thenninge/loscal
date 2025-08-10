@@ -1458,29 +1458,31 @@ async function addNewOpening(e) {
                 body: JSON.stringify(newOpening)
             });
             
-            if (response.ok) {
-                // Add to local data
-                openingHours.push(newOpening);
-                
-                // Reset form and close modal
-                e.target.reset();
-                closeAdminModal();
-                
-                // Re-render views
-                renderList();
-                renderCalendar();
-                
-                // Bedre feedback
-                const formattedDate = new Date(date).toLocaleDateString('no-NO', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: '2-digit'
-                });
-                
-                alert(`Ny åpningstid lagt til!\n\n${formattedDate}\n${startTime} - ${endTime}\n${selectedActivities.join(' + ')}\n\nAktiviteten vises nå i både liste og kalender.`);
-            } else {
-                alert('Feil ved lagring av aktivitet');
-            }
+                    if (response.ok) {
+            // Add to local data
+            openingHours.push(newOpening);
+            
+            // Reset form and close modal
+            e.target.reset();
+            closeAdminModal();
+            
+            // Re-render views
+            renderList();
+            renderCalendar();
+            
+            // Bedre feedback
+            const formattedDate = new Date(date).toLocaleDateString('no-NO', {
+                day: '2-digit',
+                month: '2-digit',
+                year: '2-digit'
+            });
+            
+            alert(`Ny åpningstid lagt til!\n\n${formattedDate}\n${startTime} - ${endTime}\n${selectedActivities.join(' + ')}\n\nAktiviteten vises nå i både liste og kalender.`);
+        } else {
+            const errorData = await response.json().catch(() => ({ error: 'Ukjent feil' }));
+            console.error('Save activity error response:', errorData);
+            alert(`Feil ved lagring av aktivitet: ${errorData.error || 'Ukjent feil'}`);
+        }
         } catch (error) {
             console.error('Error saving activity:', error);
             alert('Feil ved lagring av aktivitet');

@@ -114,62 +114,84 @@ def static_files(filename):
 # API Endpoints
 @app.route('/api/activities', methods=['GET'])
 def get_activities():
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute('SELECT * FROM activities ORDER BY date, startTime')
-    rows = cursor.fetchall()
-    conn.close()
-    
-    activities = []
-    for row in rows:
-        activities.append({
-            'id': row[0],
-            'iCalUID': row[1],
-            'date': row[2],
-            'dayOfWeek': row[3],
-            'startTime': row[4],
-            'endTime': row[5],
-            'activities': json.loads(row[6]),
-            'colors': json.loads(row[7]),
-            'comment': row[8],
-            'rangeOfficer': row[9]
-        })
-    
-    # Return empty list if no activities found - database starts blank
-    # Data will be added through import functionality
-    
-    return jsonify(activities)
+    try:
+        print("Get activities endpoint called")
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute('SELECT * FROM activities ORDER BY date, startTime')
+        rows = cursor.fetchall()
+        conn.close()
+        print(f"Retrieved {len(rows)} activities from database")
+        
+        activities = []
+        for row in rows:
+            activities.append({
+                'id': row[0],
+                'iCalUID': row[1],
+                'date': row[2],
+                'dayOfWeek': row[3],
+                'startTime': row[4],
+                'endTime': row[5],
+                'activities': json.loads(row[6]),
+                'colors': json.loads(row[7]),
+                'comment': row[8],
+                'rangeOfficer': row[9]
+            })
+        
+        # Return empty list if no activities found - database starts blank
+        # Data will be added through import functionality
+        
+        return jsonify(activities)
+    except Exception as e:
+        print(f"Error getting activities: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': f'Feil ved henting av aktiviteter: {str(e)}'}), 500
 
 @app.route('/api/activities', methods=['POST', 'OPTIONS'])
 def add_activity():
     if request.method == 'OPTIONS':
         return '', 200
-    data = request.json
-    
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    
-    cursor.execute('''
-        INSERT OR REPLACE INTO activities 
-        (id, iCalUID, date, dayOfWeek, startTime, endTime, activities, colors, comment, rangeOfficer)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ''', (
-        data['id'],
-        data.get('iCalUID'),
-        data['date'],
-        data['dayOfWeek'],
-        data['startTime'],
-        data['endTime'],
-        json.dumps(data['activities']),
-        json.dumps(data['colors']),
-        data.get('comment', ''),
-        data.get('rangeOfficer', '')
-    ))
-    
-    conn.commit()
-    conn.close()
-    
-    return jsonify({'success': True, 'id': data['id']})
+    try:
+        print("Add activity endpoint called")
+        data = request.json
+        print("Request data:", data)
+        
+        if not data:
+            print("No data received")
+            return jsonify({'success': False, 'error': 'Ingen data mottatt'}), 400
+        
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        print("Database connection established")
+        
+        cursor.execute('''
+            INSERT OR REPLACE INTO activities 
+            (id, iCalUID, date, dayOfWeek, startTime, endTime, activities, colors, comment, rangeOfficer)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (
+            data['id'],
+            data.get('iCalUID'),
+            data['date'],
+            data['dayOfWeek'],
+            data['startTime'],
+            data['endTime'],
+            json.dumps(data['activities']),
+            json.dumps(data['colors']),
+            data.get('comment', ''),
+            data.get('rangeOfficer', '')
+        ))
+        
+        conn.commit()
+        conn.close()
+        print("Activity saved successfully")
+        
+        return jsonify({'success': True, 'id': data['id']})
+    except Exception as e:
+        print(f"Error adding activity: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': f'Feil ved lagring av aktivitet: {str(e)}'}), 500
 
 @app.route('/api/activities/<activity_id>', methods=['PUT', 'OPTIONS'])
 def update_activity(activity_id):
