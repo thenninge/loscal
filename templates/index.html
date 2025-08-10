@@ -77,7 +77,7 @@
                 </label>
                 <label class="filter-item">
                     <input type="checkbox" value="DFS" checked>
-                    <span class="color-dot" style="background-color: #FFFFFF; border: 1px solid #ddd;"></span>
+                    <span class="color-dot" style="background-color: #8B4513;"></span>
                     DFS
                 </label>
                 <label class="filter-item">
@@ -390,5 +390,9 @@
     </div>
 
     <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script type="module">
+        import { inject } from '@vercel/analytics';
+        inject();
+    </script>
 </body>
 </html> 
