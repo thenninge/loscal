@@ -760,6 +760,9 @@ function verifyPin() {
     
     // Wait a moment and then read the value
     setTimeout(() => {
+        console.log('About to read PIN value...');
+        console.log('PIN Input value before reading:', pinInput.value);
+        
         const enteredPin = pinInput.value;
         const correctPin = '0406';
         
@@ -777,9 +780,11 @@ function verifyPin() {
             console.log('PIN riktig! Åpner admin-panel...');
             closePinDialog();
             toggleAdminMode();
+            console.log('Clearing PIN input after success');
             pinInput.value = ''; // Clear input
         } else {
             console.log('PIN feil! Viser feilmelding...');
+            console.log('Clearing PIN input after failure');
             pinInput.value = ''; // Clear input
             pinInput.placeholder = 'Feil PIN-kode!';
             pinInput.style.borderColor = '#dc2626';
