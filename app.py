@@ -14,6 +14,10 @@ import os.path
 pg8000 = None
 RealDictCursor = None
 
+def get_placeholder():
+    """Get the correct SQL placeholder based on environment"""
+    return '%s' if IS_VERCEL else '?'
+
 app = Flask(__name__)
 
 # Add CORS headers for Vercel
@@ -333,33 +337,53 @@ def add_activity():
         cursor = conn.cursor()
         print("Database connection established")
         
-        cursor.execute('''
-            INSERT INTO activities 
-            (id, iCalUID, date, dayOfWeek, startTime, endTime, activities, colors, comment, rangeOfficer)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            ON CONFLICT (id) DO UPDATE SET
-                iCalUID = EXCLUDED.iCalUID,
-                date = EXCLUDED.date,
-                dayOfWeek = EXCLUDED.dayOfWeek,
-                startTime = EXCLUDED.startTime,
-                endTime = EXCLUDED.endTime,
-                activities = EXCLUDED.activities,
-                colors = EXCLUDED.colors,
-                comment = EXCLUDED.comment,
-                rangeOfficer = EXCLUDED.rangeOfficer,
-                updated_at = CURRENT_TIMESTAMP
-        ''', (
-            data['id'],
-            data.get('iCalUID'),
-            data['date'],
-            data['dayOfWeek'],
-            data['startTime'],
-            data['endTime'],
-            json.dumps(data['activities']),
-            json.dumps(data['colors']),
-            data.get('comment', ''),
-            data.get('rangeOfficer', '')
-        ))
+        if IS_VERCEL:
+            # PostgreSQL syntax
+            cursor.execute('''
+                INSERT INTO activities 
+                (id, iCalUID, date, dayOfWeek, startTime, endTime, activities, colors, comment, rangeOfficer)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (id) DO UPDATE SET
+                    iCalUID = EXCLUDED.iCalUID,
+                    date = EXCLUDED.date,
+                    dayOfWeek = EXCLUDED.dayOfWeek,
+                    startTime = EXCLUDED.startTime,
+                    endTime = EXCLUDED.endTime,
+                    activities = EXCLUDED.activities,
+                    colors = EXCLUDED.colors,
+                    comment = EXCLUDED.comment,
+                    rangeOfficer = EXCLUDED.rangeOfficer,
+                    updated_at = CURRENT_TIMESTAMP
+            ''', (
+                data['id'],
+                data.get('iCalUID'),
+                data['date'],
+                data['dayOfWeek'],
+                data['startTime'],
+                data['endTime'],
+                json.dumps(data['activities']),
+                json.dumps(data['colors']),
+                data.get('comment', ''),
+                data.get('rangeOfficer', '')
+            ))
+        else:
+            # SQLite syntax
+            cursor.execute('''
+                INSERT OR REPLACE INTO activities 
+                (id, iCalUID, date, dayOfWeek, startTime, endTime, activities, colors, comment, rangeOfficer)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                data['id'],
+                data.get('iCalUID'),
+                data['date'],
+                data['dayOfWeek'],
+                data['startTime'],
+                data['endTime'],
+                json.dumps(data['activities']),
+                json.dumps(data['colors']),
+                data.get('comment', ''),
+                data.get('rangeOfficer', '')
+            ))
         
         conn.commit()
         conn.close()
@@ -384,23 +408,42 @@ def update_activity(activity_id):
         
     cursor = conn.cursor()
     
-    cursor.execute('''
-        UPDATE activities 
-        SET date = %s, dayOfWeek = %s, startTime = %s, endTime = %s, 
-            activities = %s, colors = %s, comment = %s, rangeOfficer = %s,
-            updated_at = CURRENT_TIMESTAMP
-        WHERE id = %s
-    ''', (
-        data['date'],
-        data['dayOfWeek'],
-        data['startTime'],
-        data['endTime'],
-        json.dumps(data['activities']),
-        json.dumps(data['colors']),
-        data.get('comment', ''),
-        data.get('rangeOfficer', ''),
-        activity_id
-    ))
+    if IS_VERCEL:
+        cursor.execute('''
+            UPDATE activities 
+            SET date = %s, dayOfWeek = %s, startTime = %s, endTime = %s, 
+                activities = %s, colors = %s, comment = %s, rangeOfficer = %s,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = %s
+        ''', (
+            data['date'],
+            data['dayOfWeek'],
+            data['startTime'],
+            data['endTime'],
+            json.dumps(data['activities']),
+            json.dumps(data['colors']),
+            data.get('comment', ''),
+            data.get('rangeOfficer', ''),
+            activity_id
+        ))
+    else:
+        cursor.execute('''
+            UPDATE activities 
+            SET date = ?, dayOfWeek = ?, startTime = ?, endTime = ?, 
+                activities = ?, colors = ?, comment = ?, rangeOfficer = ?,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+        ''', (
+            data['date'],
+            data['dayOfWeek'],
+            data['startTime'],
+            data['endTime'],
+            json.dumps(data['activities']),
+            json.dumps(data['colors']),
+            data.get('comment', ''),
+            data.get('rangeOfficer', ''),
+            activity_id
+        ))
     
     conn.commit()
     conn.close()
@@ -416,7 +459,10 @@ def delete_activity(activity_id):
         return jsonify({'success': False, 'error': 'Database connection failed'}), 500
         
     cursor = conn.cursor()
-    cursor.execute('DELETE FROM activities WHERE id = %s', (activity_id,))
+    if IS_VERCEL:
+        cursor.execute('DELETE FROM activities WHERE id = %s', (activity_id,))
+    else:
+        cursor.execute('DELETE FROM activities WHERE id = ?', (activity_id,))
     conn.commit()
     conn.close()
     
@@ -489,32 +535,50 @@ def import_calendar():
         
         try:
             for event in events:
-                # Use INSERT ... ON CONFLICT to handle duplicates properly
-                cursor.execute('''
-                    INSERT INTO activities (id, date, dayOfWeek, startTime, endTime, 
-                                          activities, colors, comment, rangeOfficer, created_at, updated_at)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-                    ON CONFLICT (id) DO UPDATE SET
-                        date = EXCLUDED.date,
-                        dayOfWeek = EXCLUDED.dayOfWeek,
-                        startTime = EXCLUDED.startTime,
-                        endTime = EXCLUDED.endTime,
-                        activities = EXCLUDED.activities,
-                        colors = EXCLUDED.colors,
-                        comment = EXCLUDED.comment,
-                        rangeOfficer = EXCLUDED.rangeOfficer,
-                        updated_at = CURRENT_TIMESTAMP
-                ''', (
-                    event['id'],
-                    event['date'],
-                    event['dayOfWeek'],
-                    event['startTime'],
-                    event['endTime'],
-                    json.dumps(event['activities']),
-                    json.dumps(event['colors']),
-                    event['comment'],
-                    event['rangeOfficer']
-                ))
+                if IS_VERCEL:
+                    # PostgreSQL syntax
+                    cursor.execute('''
+                        INSERT INTO activities (id, date, dayOfWeek, startTime, endTime, 
+                                              activities, colors, comment, rangeOfficer, created_at, updated_at)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                        ON CONFLICT (id) DO UPDATE SET
+                            date = EXCLUDED.date,
+                            dayOfWeek = EXCLUDED.dayOfWeek,
+                            startTime = EXCLUDED.startTime,
+                            endTime = EXCLUDED.endTime,
+                            activities = EXCLUDED.activities,
+                            colors = EXCLUDED.colors,
+                            comment = EXCLUDED.comment,
+                            rangeOfficer = EXCLUDED.rangeOfficer,
+                            updated_at = CURRENT_TIMESTAMP
+                    ''', (
+                        event['id'],
+                        event['date'],
+                        event['dayOfWeek'],
+                        event['startTime'],
+                        event['endTime'],
+                        json.dumps(event['activities']),
+                        json.dumps(event['colors']),
+                        event['comment'],
+                        event['rangeOfficer']
+                    ))
+                else:
+                    # SQLite syntax
+                    cursor.execute('''
+                        INSERT OR REPLACE INTO activities (id, date, dayOfWeek, startTime, endTime, 
+                                              activities, colors, comment, rangeOfficer, created_at, updated_at)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                    ''', (
+                        event['id'],
+                        event['date'],
+                        event['dayOfWeek'],
+                        event['startTime'],
+                        event['endTime'],
+                        json.dumps(event['activities']),
+                        json.dumps(event['colors']),
+                        event['comment'],
+                        event['rangeOfficer']
+                    ))
                 
                 # Check if this was an insert or update by checking if row was affected
                 if cursor.rowcount > 0:
@@ -840,7 +904,10 @@ def cleanup_maintenance_events():
             should_delete = True
             
         if should_delete:
-            cursor.execute('DELETE FROM activities WHERE id = %s', (activity_id,))
+            if IS_VERCEL:
+                cursor.execute('DELETE FROM activities WHERE id = %s', (activity_id,))
+            else:
+                cursor.execute('DELETE FROM activities WHERE id = ?', (activity_id,))
             deleted_count += 1
     
     conn.commit()
