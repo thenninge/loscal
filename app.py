@@ -83,6 +83,23 @@ def debug_static():
             'files': []
         })
 
+@app.route('/debug/ical')
+def debug_ical():
+    try:
+        ical_url = "https://calendar.google.com/calendar/ical/2h495fqj8gr9p42361rriptlibc7gf6k%40import.calendar.google.com/public/basic.ics"
+        response = requests.get(ical_url, timeout=10)
+        return jsonify({
+            'status_code': response.status_code,
+            'content_length': len(response.text),
+            'content_preview': response.text[:500] if response.text else 'No content'
+        })
+    except Exception as e:
+        return jsonify({
+            'error': str(e),
+            'status_code': None,
+            'content_length': 0
+        })
+
 @app.route('/api/activities', methods=['OPTIONS'])
 def handle_options():
     return '', 200
@@ -203,13 +220,20 @@ def import_calendar():
     if request.method == 'OPTIONS':
         return '', 200
     try:
+        print("Import calendar endpoint called")
         # Get date range and auto-categorize setting from request
         data = request.get_json()
+        print("Request data:", data)
+        
         from_date = data.get('from_date')
         to_date = data.get('to_date')
         auto_categorize = data.get('auto_categorize', True)  # Default to True for backward compatibility
         
+        print(f"Date range: {from_date} to {to_date}")
+        print(f"Auto categorize: {auto_categorize}")
+        
         if not from_date or not to_date:
+            print("Missing date parameters")
             return jsonify({
                 'success': False,
                 'error': 'Fra- og til-dato må være spesifisert'
@@ -218,15 +242,22 @@ def import_calendar():
         # iCal URL for Lorenskog Skytterlag
         ical_url = "https://calendar.google.com/calendar/ical/2h495fqj8gr9p42361rriptlibc7gf6k%40import.calendar.google.com/public/basic.ics"
         
+        print(f"Fetching iCal data from: {ical_url}")
+        
         # Fetch iCal data
         response = requests.get(ical_url, timeout=10)
+        print(f"iCal response status: {response.status_code}")
         response.raise_for_status()
         
         # Parse iCal data
         ical_data = response.text
+        print(f"iCal data length: {len(ical_data)} characters")
+        
         events = parse_ical_data(ical_data, from_date, to_date, auto_categorize)
+        print(f"Parsed events: {len(events)} events found")
         
         if not events:
+            print("No events found in date range")
             return jsonify({
                 'success': True,
                 'message': 'Ingen nye aktiviteter funnet i kalenderen',
@@ -302,11 +333,15 @@ def import_calendar():
         })
         
     except requests.RequestException as e:
+        print(f"Request exception: {str(e)}")
         return jsonify({
             'success': False, 
             'error': f'Kunne ikke hente kalenderdata: {str(e)}'
         }), 500
     except Exception as e:
+        print(f"General exception: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return jsonify({
             'success': False, 
             'error': f'Feil ved import: {str(e)}'

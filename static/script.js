@@ -1228,11 +1228,13 @@ async function startImport() {
                 emptyMessage.style.display = 'none';
             }
         } else {
-            alert('Feil ved import av kalender');
+            const errorData = await response.json().catch(() => ({ error: 'Ukjent feil' }));
+            console.error('Import error response:', errorData);
+            alert(`Feil ved import av kalender: ${errorData.error || 'Ukjent feil'}`);
         }
     } catch (error) {
         console.error('Error importing calendar:', error);
-        alert('Feil ved import av kalender');
+        alert(`Feil ved import av kalender: ${error.message}`);
     }
 }
 
