@@ -934,7 +934,7 @@ function prefillEditForm(activity) {
     const deleteBtn = document.getElementById('deleteActivityBtn');
     
     if (formTitle) formTitle.textContent = 'Rediger aktivitet';
-    if (submitBtn) submitBtn.textContent = 'Lagre';
+    if (submitBtn) submitBtn.innerHTML = '<i class="fas fa-save"></i> Lagre';
     if (deleteBtn) deleteBtn.style.display = 'inline-block';
 }
 
@@ -1429,7 +1429,7 @@ function resetEditForm() {
     const deleteBtn = document.getElementById('deleteActivityBtn');
     
     if (formTitle) formTitle.textContent = 'Legg til ny åpningstid';
-    if (submitBtn) submitBtn.textContent = 'Legg til';
+    if (submitBtn) submitBtn.innerHTML = '<i class="fas fa-plus"></i> Legg til';
     if (deleteBtn) deleteBtn.style.display = 'none';
     
     // Clear all form fields
