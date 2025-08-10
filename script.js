@@ -74,7 +74,7 @@ function getDefaultData() {
             startTime: '14:00',
             endTime: '20:00',
             activities: ['Åpen for alle'],
-            colors: ['#FF6B6B'],
+            colors: ['#98FB98'],
             comment: 'Åpen skytebane - alle medlemmer velkomne!',
             rangeOfficer: 'Maria Hansen'
         },
@@ -84,8 +84,8 @@ function getDefaultData() {
             dayOfWeek: 'Søndag',
             startTime: '10:00',
             endTime: '16:00',
-            activities: ['Jaktskyting', 'Storviltprøve'],
-            colors: ['#3B82F6', '#10B981'],
+            activities: ['Jeger', 'Storviltprøve'],
+            colors: ['#228B22', '#3B82F6'],
             comment: 'Jaktskyting med storviltprøve av nye medlemmer',
             rangeOfficer: 'Ola Nordmann'
         },
@@ -97,9 +97,9 @@ function getDefaultData() {
             dayOfWeek: 'Mandag',
             startTime: '09:00',
             endTime: '17:00',
-            activities: ['Jaktskyting'],
-            colors: ['#3B82F6'],
-            comment: 'Vanlig åpningstid for jaktskyting',
+            activities: ['Jeger'],
+            colors: ['#228B22'],
+            comment: 'Vanlig åpningstid for jeger',
             rangeOfficer: 'Ola Nordmann'
         },
         {
@@ -130,8 +130,8 @@ function getDefaultData() {
             dayOfWeek: 'Torsdag',
             startTime: '09:00',
             endTime: '17:00',
-            activities: ['Jaktskyting', 'Oppskyting'],
-            colors: ['#3B82F6', '#EF4444'],
+            activities: ['Jeger', 'Oppskyting'],
+            colors: ['#228B22', '#EF4444'],
             comment: 'Jaktskyting med oppskyting',
             rangeOfficer: 'Anne Berg'
         },
@@ -141,9 +141,9 @@ function getDefaultData() {
             dayOfWeek: 'Lørdag',
             startTime: '09:00',
             endTime: '18:00',
-            activities: ['Stevne'],
+            activities: ['PRS'],
             colors: ['#8B5CF6'],
-            comment: 'Lørdagsstevne - alle velkomne!',
+            comment: 'PRS trening - alle velkomne!',
             rangeOfficer: 'Erik Johansen'
         },
         {
@@ -153,7 +153,7 @@ function getDefaultData() {
             startTime: '10:00',
             endTime: '16:00',
             activities: ['DFS', 'Pistol'],
-            colors: ['#10B981', '#F59E0B'],
+            colors: ['#FFFFFF', '#F59E0B'],
             comment: 'DFS og pistolskyting',
             rangeOfficer: 'Kari Hansen'
         }
