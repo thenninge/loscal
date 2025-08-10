@@ -311,9 +311,10 @@ def determine_activity_types(summary):
     if any(word in summary_lower for word in maintenance_words):
         return []
     
-    # Check for "Ledig" or "Ikke satt" - mark as Udefinert
+    # Check for "Ledig" or "Ikke satt" - mark as Uavklart
     if any(word in summary_lower for word in ['ledig', 'ikke satt', 'uavklart']):
-        activities.append('Udefinert')
+        activities.append('Uavklart')
+        return activities  # Return early, don't add other categories
     
     # Check other activity types
     if 'jaktskyting' in summary_lower or 'jakt' in summary_lower:
@@ -361,7 +362,6 @@ def get_color_for_activity(activity_type):
         'Storviltprøve': '#10B981',
         'Annet': '#6B7280',
         'Uavklart': '#EF4444',
-        'Udefinert': '#EF4444',
         '100m': '#FF6B6B',
         '200m': '#4ECDC4'
     }
