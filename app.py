@@ -780,7 +780,46 @@ def parse_ical_data(ical_content, from_date=None, to_date=None, auto_categorize=
         elif in_event and line.startswith('DESCRIPTION:'):
             current_event['description'] = line[12:]
     
+    # Remove duplicates by prioritizing "Standplassleder" over "Vakt Standplass"
+    events = remove_duplicate_events(events)
+    
     return events
+
+def remove_duplicate_events(events):
+    """Remove duplicate events by prioritizing Standplassleder over Vakt Standplass"""
+    # Group events by date and time
+    event_groups = {}
+    
+    for event in events:
+        key = f"{event['date']}_{event['startTime']}_{event['endTime']}"
+        if key not in event_groups:
+            event_groups[key] = []
+        event_groups[key].append(event)
+    
+    # For each group, keep the event with highest priority
+    filtered_events = []
+    
+    for key, group_events in event_groups.items():
+        if len(group_events) == 1:
+            # No duplicates, keep the event
+            filtered_events.append(group_events[0])
+        else:
+            # Duplicates found, prioritize based on summary
+            best_event = group_events[0]  # Default to first event
+            
+            for event in group_events:
+                summary = event['comment'].lower()
+                
+                # Priority order: Standplassleder > Vakt Standplass > others
+                if 'standplassleder' in summary:
+                    best_event = event
+                    break  # Highest priority, no need to check others
+                elif 'vakt standplass' in summary and 'standplassleder' not in best_event['comment'].lower():
+                    best_event = event
+            
+            filtered_events.append(best_event)
+    
+    return filtered_events
 
 def parse_ical_datetime(dt_string):
     """Parse iCal datetime string"""
