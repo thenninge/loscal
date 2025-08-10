@@ -12,7 +12,6 @@ import pickle
 import os.path
 # Import pg8000 only when needed (Vercel)
 pg8000 = None
-RealDictCursor = None
 
 def get_placeholder():
     """Get the correct SQL placeholder based on environment"""
@@ -197,8 +196,8 @@ def debug_pg8000():
         import pg8000
         print("pg8000 imported successfully")
         
-        from pg8000.extras import RealDictCursor
-        print("RealDictCursor imported successfully")
+        # pg8000 doesn't have RealDictCursor, so we don't need to import it
+        print("pg8000 doesn't have RealDictCursor - using regular cursor")
         
         # Test connection
         print("Testing connection...")
@@ -317,13 +316,8 @@ def get_activities():
             
         if IS_VERCEL:
             print("Using PostgreSQL (Vercel)")
-            # Import RealDictCursor dynamically
-            global RealDictCursor
-            if RealDictCursor is None:
-                print("Importing RealDictCursor...")
-                from pg8000.extras import RealDictCursor
-                print("RealDictCursor imported successfully")
-            cursor = conn.cursor(cursor_factory=RealDictCursor)
+            # pg8000 doesn't have RealDictCursor, use regular cursor
+            cursor = conn.cursor()
             print("Executing SELECT query...")
             cursor.execute('SELECT * FROM activities ORDER BY date, startTime')
             print("Fetching rows...")
@@ -333,34 +327,34 @@ def get_activities():
             activities = []
             for row in rows:
                 try:
-                    # Handle activities field
-                    activities_data = row['activities']
+                    # Handle activities field (index 6)
+                    activities_data = row[6]
                     if isinstance(activities_data, str):
                         activities_data = json.loads(activities_data)
                     elif activities_data is None:
                         activities_data = []
                     
-                    # Handle colors field
-                    colors_data = row['colors']
+                    # Handle colors field (index 7)
+                    colors_data = row[7]
                     if isinstance(colors_data, str):
                         colors_data = json.loads(colors_data)
                     elif colors_data is None:
                         colors_data = []
                     
                     activities.append({
-                        'id': row['id'],
-                        'iCalUID': row['icaluid'],
-                        'date': row['date'],
-                        'dayOfWeek': row['dayofweek'],
-                        'startTime': row['starttime'],
-                        'endTime': row['endtime'],
+                        'id': row[0],
+                        'iCalUID': row[1],
+                        'date': row[2],
+                        'dayOfWeek': row[3],
+                        'startTime': row[4],
+                        'endTime': row[5],
                         'activities': activities_data,
                         'colors': colors_data,
-                        'comment': row['comment'],
-                        'rangeOfficer': row['rangeofficer']
+                        'comment': row[8],
+                        'rangeOfficer': row[9]
                     })
                 except Exception as e:
-                    print(f"Error processing row {row['id']}: {str(e)}")
+                    print(f"Error processing PostgreSQL row {row[0]}: {str(e)}")
                     print(f"Row data: {row}")
                     # Skip this row and continue
                     continue
