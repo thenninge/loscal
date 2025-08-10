@@ -81,6 +81,7 @@ const weeklySchedule = {
 - Søk i kommentarer
 - Filtrer på standsplassleder
 - Tidsrom-filtrering
+- **Avansert filtrering for bedre UX (Uavklart)** - Forbedre brukeropplevelse for filtrering av uavklarte aktiviteter
 
 ### 6. **Responsive Design & Sizing**
 - **Kalender-view sizing issues** - fikse at elementer ikke forsvinner ut av skjermen ✅
