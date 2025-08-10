@@ -1169,26 +1169,28 @@ function getColorForActivity(activityType) {
 }
 
 function extractRangeOfficer(summary) {
+    console.log('🔍 extractRangeOfficer called with:', summary);
+    
     // Extract person name from summary (e.g., "Thomas Bogdahl - Standplassleder")
     const match = summary.match(/^([^-]+)\s*-\s*/);
     if (!match) {
-        console.log('extractRangeOfficer: No match found for:', summary);
+        console.log('❌ extractRangeOfficer: No match found for:', summary);
         return 'Ikke satt';
     }
     
     const personName = match[1].trim();
     const role = summary.substring(match[0].length).trim().toLowerCase();
     
-    console.log('extractRangeOfficer:', { summary, personName, role });
+    console.log('📋 extractRangeOfficer:', { summary, personName, role });
     
     // Only set range officer if the role is "standplassleder"
     // Don't set for "vakt standplass", "klargjøring", etc.
     if (role === 'standplassleder') {
-        console.log('extractRangeOfficer: Setting range officer to:', personName);
+        console.log('✅ extractRangeOfficer: Setting range officer to:', personName);
         return personName;
     }
     
-    console.log('extractRangeOfficer: Role is not "standplassleder", returning "Ikke satt"');
+    console.log('❌ extractRangeOfficer: Role is not "standplassleder", returning "Ikke satt"');
     return 'Ikke satt';
 }
 
