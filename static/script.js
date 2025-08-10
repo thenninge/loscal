@@ -8,6 +8,17 @@ let adminMode = false;
 // Initialize openingHours as empty array
 let openingHours = [];
 
+// Test loading overlay on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const loadingOverlay = document.getElementById('importLoadingOverlay');
+    console.log('DOM loaded - Loading overlay element:', loadingOverlay);
+    if (loadingOverlay) {
+        console.log('Loading overlay found and ready');
+    } else {
+        console.error('Loading overlay not found!');
+    }
+});
+
 // Function to get default data
 function getDefaultData() {
     return [
@@ -1209,9 +1220,14 @@ async function startImport() {
         }
         
         // Show loading overlay and close admin modal
+        console.log('startImport: Showing loading overlay...');
         const loadingOverlay = document.getElementById('importLoadingOverlay');
+        console.log('startImport: Loading overlay element:', loadingOverlay);
         if (loadingOverlay) {
             loadingOverlay.classList.remove('hidden');
+            console.log('startImport: Loading overlay shown');
+        } else {
+            console.log('startImport: Loading overlay element not found!');
         }
         closeAdminModal();
         
@@ -1228,8 +1244,10 @@ async function startImport() {
         });
         
         // Hide loading overlay after response is received
+        console.log('startImport: Hiding loading overlay...');
         if (loadingOverlay) {
             loadingOverlay.classList.add('hidden');
+            console.log('startImport: Loading overlay hidden');
         }
         
         if (response.ok) {
@@ -1260,9 +1278,11 @@ async function startImport() {
         }
     } catch (error) {
         // Hide loading overlay on error
+        console.log('startImport: Error occurred, hiding loading overlay...');
         const loadingOverlay = document.getElementById('importLoadingOverlay');
         if (loadingOverlay) {
             loadingOverlay.classList.add('hidden');
+            console.log('startImport: Loading overlay hidden due to error');
         }
         
         console.error('Error importing calendar:', error);
