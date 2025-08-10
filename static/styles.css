@@ -374,6 +374,36 @@ body {
     font-weight: 500;
 }
 
+.admin-buttons {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.edit-btn {
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.edit-btn:hover {
+    background: #2563eb;
+    transform: scale(1.1);
+}
+
+.edit-btn i {
+    font-size: 0.75rem;
+}
+
 .delete-btn {
     background: #dc2626;
     color: white;
@@ -387,7 +417,6 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-left: 0.5rem;
 }
 
 .delete-btn:hover {

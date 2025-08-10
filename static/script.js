@@ -1,5 +1,5 @@
 // App state
-let currentView = 'calendar';
+let currentView = 'list';
 let currentMonth = new Date();
 let isAdmin = false;
 let adminPin = '1234'; // Default PIN - should be configurable
@@ -174,9 +174,9 @@ document.addEventListener('DOMContentLoaded', async function() {
     await loadData();
     setupEventListeners();
     
-    // Set initial view to calendar
-    document.getElementById('listView').classList.remove('active');
-    document.getElementById('calendarView').classList.add('active');
+    // Set initial view to list
+    document.getElementById('listView').classList.add('active');
+    document.getElementById('calendarView').classList.remove('active');
     
     renderList();
     renderCalendar();
@@ -441,11 +441,16 @@ function createListItem(item) {
         `<span class="activity-badge ${activity}" style="background-color: ${item.colors[index]}">${activity}</span>`
     ).join('');
     
-    // Only show delete button in admin mode
-    const deleteButton = adminMode ? `
-        <button class="delete-btn" onclick="deleteActivityById('${item.id}')" title="Slett aktivitet">
-            <i class="fas fa-trash"></i>
-        </button>
+    // Only show admin buttons in admin mode
+    const adminButtons = adminMode ? `
+        <div class="admin-buttons">
+            <button class="edit-btn" onclick="event.stopPropagation(); openEditModalById('${item.id}')" title="Rediger aktivitet">
+                <i class="fas fa-edit"></i>
+            </button>
+            <button class="delete-btn" onclick="event.stopPropagation(); deleteActivityById('${item.id}')" title="Slett aktivitet">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
     ` : '';
     
     return `
@@ -453,7 +458,7 @@ function createListItem(item) {
             <div class="item-header">
                 <div class="item-date">${formattedDate} (${item.dayOfWeek})</div>
                 <div class="item-time">${item.startTime} - ${item.endTime}</div>
-                ${deleteButton}
+                ${adminButtons}
             </div>
             <div class="item-activity">
                 ${activityBadges}
@@ -675,19 +680,21 @@ function updateUIForAdminMode() {
 }
 
 function makeActivitiesEditable() {
-    const listItems = document.querySelectorAll('.list-item');
-    listItems.forEach(item => {
-        item.classList.add('admin-clickable');
-        item.addEventListener('click', handleActivityClick);
-    });
+    // Don't make items clickable when we have dedicated edit/delete buttons
+    // const listItems = document.querySelectorAll('.list-item');
+    // listItems.forEach(item => {
+    //     item.classList.add('admin-clickable');
+    //     item.addEventListener('click', handleActivityClick);
+    // });
 }
 
 function removeEditableActivities() {
-    const listItems = document.querySelectorAll('.list-item');
-    listItems.forEach(item => {
-        item.classList.remove('admin-clickable');
-        item.removeEventListener('click', handleActivityClick);
-    });
+    // Don't make items clickable when we have dedicated edit/delete buttons
+    // const listItems = document.querySelectorAll('.list-item');
+    // listItems.forEach(item => {
+    //     item.classList.remove('admin-clickable');
+    //     item.removeEventListener('click', handleActivityClick);
+    // });
 }
 
 function handleActivityClick(e) {
@@ -1262,13 +1269,20 @@ async function deleteActivityById(activityId) {
             renderCalendar();
             updateActivityCounter();
             
-            alert('Aktivitet slettet!');
+            // Don't show alert for successful deletion
         } else {
             alert('Feil ved sletting av aktivitet');
         }
     } catch (error) {
         console.error('Error deleting activity:', error);
         alert('Feil ved sletting av aktivitet');
+    }
+}
+
+function openEditModalById(activityId) {
+    const activity = openingHours.find(a => a.id === activityId);
+    if (activity) {
+        openEditModal(activity);
     }
 }
 
