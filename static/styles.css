@@ -870,7 +870,7 @@ body {
     gap: 1rem;
     align-items: center;
     margin-top: 1rem;
-    justify-content: flex-end;
+    justify-content: center;
 }
 
 .form-actions .btn {
