@@ -1,5 +1,5 @@
 // App state
-let currentView = 'list';
+let currentView = 'calendar';
 let currentMonth = new Date();
 let isAdmin = false;
 let adminPin = '1234'; // Default PIN - should be configurable
@@ -173,6 +173,11 @@ const dayNames = ['Mandag', 'Tirsdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lørdag',
 document.addEventListener('DOMContentLoaded', async function() {
     await loadData();
     setupEventListeners();
+    
+    // Set initial view to calendar
+    document.getElementById('listView').classList.remove('active');
+    document.getElementById('calendarView').classList.add('active');
+    
     renderList();
     renderCalendar();
     updateViewToggle();
@@ -378,8 +383,10 @@ function toggleView() {
 function updateViewToggle() {
     const button = document.getElementById('viewToggle');
     if (currentView === 'list') {
+        // Currently in list view, button should show "Kalender" (what happens when clicked)
         button.innerHTML = '<i class="fas fa-calendar"></i> Kalender';
     } else {
+        // Currently in calendar view, button should show "Liste" (what happens when clicked)
         button.innerHTML = '<i class="fas fa-list"></i> Liste';
     }
 }
