@@ -1244,7 +1244,7 @@ function updateActivityCounter() {
 
 function updateActivityCount() {
     const count = openingHours ? openingHours.length : 0;
-    const counterElements = document.querySelectorAll('#activityCount');
+    const counterElements = document.querySelectorAll('#activityCount, #activityCountMain');
     counterElements.forEach(element => {
         element.textContent = count;
     });
