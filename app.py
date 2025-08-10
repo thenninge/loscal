@@ -268,18 +268,38 @@ def get_activities():
             
             activities = []
             for row in rows:
-                activities.append({
-                    'id': row['id'],
-                    'iCalUID': row['icaluid'],
-                    'date': row['date'],
-                    'dayOfWeek': row['dayofweek'],
-                    'startTime': row['starttime'],
-                    'endTime': row['endtime'],
-                    'activities': json.loads(row['activities']) if isinstance(row['activities'], str) else row['activities'],
-                    'colors': json.loads(row['colors']) if isinstance(row['colors'], str) else row['colors'],
-                    'comment': row['comment'],
-                    'rangeOfficer': row['rangeofficer']
-                })
+                try:
+                    # Handle activities field
+                    activities_data = row['activities']
+                    if isinstance(activities_data, str):
+                        activities_data = json.loads(activities_data)
+                    elif activities_data is None:
+                        activities_data = []
+                    
+                    # Handle colors field
+                    colors_data = row['colors']
+                    if isinstance(colors_data, str):
+                        colors_data = json.loads(colors_data)
+                    elif colors_data is None:
+                        colors_data = []
+                    
+                    activities.append({
+                        'id': row['id'],
+                        'iCalUID': row['icaluid'],
+                        'date': row['date'],
+                        'dayOfWeek': row['dayofweek'],
+                        'startTime': row['starttime'],
+                        'endTime': row['endtime'],
+                        'activities': activities_data,
+                        'colors': colors_data,
+                        'comment': row['comment'],
+                        'rangeOfficer': row['rangeofficer']
+                    })
+                except Exception as e:
+                    print(f"Error processing row {row['id']}: {str(e)}")
+                    print(f"Row data: {row}")
+                    # Skip this row and continue
+                    continue
         else:
             cursor = conn.cursor()
             cursor.execute('SELECT * FROM activities ORDER BY date, startTime')
@@ -287,23 +307,47 @@ def get_activities():
             
             activities = []
             for row in rows:
-                activities.append({
-                    'id': row[0],
-                    'iCalUID': row[1],
-                    'date': row[2],
-                    'dayOfWeek': row[3],
-                    'startTime': row[4],
-                    'endTime': row[5],
-                    'activities': json.loads(row[6]),
-                    'colors': json.loads(row[7]),
-                    'comment': row[8],
-                    'rangeOfficer': row[9]
-                })
+                try:
+                    # Handle activities field
+                    activities_data = row[6]
+                    if isinstance(activities_data, str):
+                        activities_data = json.loads(activities_data)
+                    elif activities_data is None:
+                        activities_data = []
+                    
+                    # Handle colors field
+                    colors_data = row[7]
+                    if isinstance(colors_data, str):
+                        colors_data = json.loads(colors_data)
+                    elif colors_data is None:
+                        colors_data = []
+                    
+                    activities.append({
+                        'id': row[0],
+                        'iCalUID': row[1],
+                        'date': row[2],
+                        'dayOfWeek': row[3],
+                        'startTime': row[4],
+                        'endTime': row[5],
+                        'activities': activities_data,
+                        'colors': colors_data,
+                        'comment': row[8],
+                        'rangeOfficer': row[9]
+                    })
+                except Exception as e:
+                    print(f"Error processing SQLite row {row[0]}: {str(e)}")
+                    print(f"Row data: {row}")
+                    # Skip this row and continue
+                    continue
         
         conn.close()
         print(f"Retrieved {len(activities)} activities from database")
         
         print(f"Returning {len(activities)} activities from database")
+        
+        # Add debug info about the first activity if any
+        if activities:
+            print(f"First activity sample: {activities[0]}")
         
         return jsonify(activities)
     except Exception as e:
