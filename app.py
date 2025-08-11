@@ -1005,9 +1005,10 @@ def remove_duplicate_events(events):
             clean_comments = []
             for event in group_events:
                 comment = event['comment'].replace('Importert fra Lorenskog Skytterlag: ', '')
-                # Remove "Ledig" prefix if it's just a generic slot
+                # Keep "Ledig" information but clean up the format
                 if comment.startswith('Ledig ') and 'vakt' in comment.lower():
-                    comment = comment.replace('Ledig ', '').replace(' vakt', '')
+                    # Change "Ledig Standplassleder vakt" to "Standplassleder vakt - ledig"
+                    comment = comment.replace('Ledig ', '').replace(' vakt', ' vakt - ledig')
                 clean_comments.append(comment)
             
             # Use the most descriptive comment as base, or create a summary
@@ -1022,7 +1023,7 @@ def remove_duplicate_events(events):
                         break
                 
                 # Always show all comments, regardless of count
-                combined_event['comment'] = f"Kombinert: {', '.join(clean_comments)}"
+                combined_event['comment'] = f"{', '.join(clean_comments)}"
             
             print(f"🎯 Combined event: {combined_event['comment']} with activities: {unique_activities}")
             filtered_events.append(combined_event)
