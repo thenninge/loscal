@@ -915,13 +915,22 @@ def parse_ical_datetime(dt_string):
     
     # Handle different iCal datetime formats
     if 'T' in dt_string and 'Z' in dt_string:
-        # Format: 20250108T180000Z
-        dt_string = dt_string.replace('Z', '+00:00')
+        # Format: 20250108T180000Z - Z means UTC
+        # Convert to local time (Europe/Oslo = UTC+2 in summer)
+        dt_string = dt_string.replace('Z', '')
+        parsed = datetime.strptime(dt_string, '%Y%m%dT%H%M%S')
+        # Add 2 hours for Europe/Oslo summer time
+        parsed = parsed + timedelta(hours=2)
+        print(f"✅ Parsed UTC datetime: {dt_string} -> {parsed} -> {parsed.strftime('%H:%M')}")
+        return parsed
     elif 'T' in dt_string and len(dt_string) == 15:
-        # Format: 20250108T180000
-        dt_string = dt_string + '+00:00'
+        # Format: 20250108T180000 - assume local time
+        parsed = datetime.strptime(dt_string, '%Y%m%dT%H%M%S')
+        print(f"✅ Parsed local datetime: {dt_string} -> {parsed} -> {parsed.strftime('%H:%M')}")
+        return parsed
     
     try:
+        # Try other formats
         parsed = datetime.fromisoformat(dt_string.replace('T', ' ').replace('Z', ''))
         print(f"✅ Parsed datetime: {parsed} -> {parsed.strftime('%H:%M')}")
         return parsed
