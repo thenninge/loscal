@@ -938,15 +938,31 @@ def remove_duplicate_events(events):
             for event in group_events:
                 print(f"📋 Event: {event['comment']} with activities: {event['activities']}")
             
-            # Choose the base event (prefer Standplassleder, then Storviltprøve kontrollør)
+            # Choose the base event (prefer Standplassleder, then Storviltprøve kontrollør, then newest)
             base_event = group_events[0]
+            best_priority = 0
+            
             for event in group_events:
                 summary = event['comment'].lower()
+                priority = 0
+                
+                # Highest priority: Standplassleder
                 if 'standplassleder' in summary:
+                    priority = 3
+                # Medium priority: Storviltprøve kontrollør
+                elif 'storviltprøve kontrollør' in summary:
+                    priority = 2
+                # Lower priority: Other events
+                else:
+                    priority = 1
+                
+                # If same priority, prefer the one that's not "ledig" (more specific info)
+                if priority == best_priority and 'ledig' in summary and 'ledig' not in base_event['comment'].lower():
+                    continue  # Keep current base_event if it's not "ledig"
+                
+                if priority > best_priority:
                     base_event = event
-                    break
-                elif 'storviltprøve kontrollør' in summary and 'standplassleder' not in base_event['comment'].lower():
-                    base_event = event
+                    best_priority = priority
             
             # Combine all activities from all events
             all_activities = []
