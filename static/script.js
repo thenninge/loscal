@@ -591,11 +591,49 @@ function renderCalendar() {
                 <div class="calendar-day ${isToday ? 'today' : ''}" data-date="${dateString}">
                     <div class="day-number">${day}</div>
                     <div class="day-events">
-                        ${dayEvents.map(event => `
-                            <div class="day-event" style="background: linear-gradient(45deg, ${Array.isArray(event.colors) ? event.colors.join(', ') : event.colors})">
-                                <span class="event-text">${event.startTime} ${event.activities.join(' + ')}</span>
-                            </div>
-                        `).join('')}
+                        ${dayEvents.map(event => {
+                            // Get active filters (excluding "Utelat udefinert")
+                            const activeFilters = Array.from(document.querySelectorAll('.filter-item input:checked'))
+                                .map(checkbox => checkbox.value)
+                                .filter(filter => filter !== 'Utelat udefinert');
+                            
+                            // If no filters are selected, show all colors
+                            if (activeFilters.length === 0) {
+                                const colors = Array.isArray(event.colors) ? event.colors : [event.colors];
+                                return `
+                                    <div class="day-event" style="background: linear-gradient(45deg, ${colors.join(', ')})">
+                                        <span class="event-text">${event.startTime} ${event.activities.join(' + ')}</span>
+                                    </div>
+                                `;
+                            }
+                            
+                            // Filter colors based on active filters + always include "Uavklart"
+                            const filteredColors = [];
+                            const hasUavklart = event.activities.includes('Uavklart');
+                            
+                            event.activities.forEach((activity, index) => {
+                                const color = Array.isArray(event.colors) ? event.colors[index] : event.colors;
+                                if (activeFilters.includes(activity) || activity === 'Uavklart') {
+                                    filteredColors.push(color);
+                                }
+                            });
+                            
+                            // If no colors match active filters, show all colors
+                            if (filteredColors.length === 0) {
+                                const colors = Array.isArray(event.colors) ? event.colors : [event.colors];
+                                return `
+                                    <div class="day-event" style="background: linear-gradient(45deg, ${colors.join(', ')})">
+                                        <span class="event-text">${event.startTime} ${event.activities.join(' + ')}</span>
+                                    </div>
+                                `;
+                            }
+                            
+                            return `
+                                <div class="day-event" style="background: linear-gradient(45deg, ${filteredColors.join(', ')})">
+                                    <span class="event-text">${event.startTime} ${event.activities.join(' + ')}</span>
+                                </div>
+                            `;
+                        }).join('')}
                     </div>
                 </div>
             `;
