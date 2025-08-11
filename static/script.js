@@ -341,6 +341,9 @@ function setupEventListeners() {
         switchAdminPanel('checkDuplicatesPanel');
         await checkForDuplicates();
     });
+    document.getElementById('deleteActivitiesBtn').addEventListener('click', () => {
+        switchAdminPanel('deleteActivitiesPanel');
+    });
 
     
     // Import calendar button
