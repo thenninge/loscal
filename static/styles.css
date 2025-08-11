@@ -125,6 +125,24 @@ body {
     background: #bdc3c7;
 }
 
+/* Filter control buttons - more prominent */
+.filter-controls .btn {
+    background: #3498db;
+    color: white;
+    font-weight: 600;
+    box-shadow: 0 2px 4px rgba(52, 152, 219, 0.3);
+}
+
+.filter-controls .btn:hover {
+    background: #2980b9;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(52, 152, 219, 0.4);
+}
+
+.filter-controls .btn i {
+    font-weight: bold;
+}
+
 .btn-small {
     padding: 0.25rem 0.75rem;
     font-size: 0.85rem;
