@@ -434,6 +434,9 @@ function toggleView() {
     document.getElementById('calendarView').classList.toggle('active', currentView === 'calendar');
     
     updateViewToggle();
+    
+    // Oppdater view med aktuelle filtre når man bytter view
+    filterData();
 }
 
 function updateViewToggle() {
