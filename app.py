@@ -133,6 +133,28 @@ def init_db():
                 )
             ''')
         
+        # Add source column if it doesn't exist (migration)
+        try:
+            if IS_VERCEL:
+                # PostgreSQL - check if column exists
+                cursor.execute("""
+                    SELECT column_name 
+                    FROM information_schema.columns 
+                    WHERE table_name = 'activities' AND column_name = 'source'
+                """)
+                if not cursor.fetchone():
+                    print("Adding 'source' column to existing database...")
+                    cursor.execute('ALTER TABLE activities ADD COLUMN source VARCHAR(20) DEFAULT \'manual\'')
+            else:
+                # SQLite - check if column exists
+                cursor.execute("PRAGMA table_info(activities)")
+                columns = [column[1] for column in cursor.fetchall()]
+                if 'source' not in columns:
+                    print("Adding 'source' column to existing database...")
+                    cursor.execute('ALTER TABLE activities ADD COLUMN source TEXT DEFAULT \'manual\'')
+        except Exception as migration_error:
+            print(f"Migration warning (column might already exist): {str(migration_error)}")
+        
         conn.commit()
         conn.close()
         print(f"Database initialized successfully ({'Supabase PostgreSQL' if IS_VERCEL else 'Local SQLite'})")
