@@ -381,7 +381,10 @@ function setupEventListeners() {
     
     // Delete all activities button
     document.getElementById('deleteAllActivitiesBtnMain').addEventListener('click', () => {
-        if (!adminMode) {
+        const adminControls = document.getElementById('adminModeControls');
+        const isAdminModeActive = !adminControls.classList.contains('hidden');
+        
+        if (!isAdminModeActive) {
             // If not in admin mode, show PIN dialog first
             window.deleteButtonClicked = true;
             showPinDialog();
