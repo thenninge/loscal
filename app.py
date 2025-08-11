@@ -752,7 +752,11 @@ def import_calendar():
             'success': True,
             'message': f'Suksess! {", ".join(message_parts)} fra Lorenskog Skytterlag kalender',
             'imported_count': imported_count,
-            'updated_count': updated_count
+            'updated_count': updated_count,
+            'debug_info': {
+                'total_events_processed': len(events) if 'events' in locals() else 0,
+                'events_processed': [event['comment'] for event in events[:5]] if 'events' in locals() else []
+            }
         })
         
     except requests.RequestException as e:
@@ -787,16 +791,23 @@ def parse_ical_data(ical_content, from_date=None, to_date=None, auto_categorize=
             in_event = True
         elif line.startswith('END:VEVENT'):
             if current_event and 'summary' in current_event:
+                print(f"📅 Processing event: {current_event.get('summary')} at {current_event.get('start')}")
                 # Convert to activity format
                 activity = convert_event_to_activity(current_event, day_names, auto_categorize)
                 if activity:
+                    print(f"✅ Event converted: {activity['comment']}")
                     # Filter by date range if specified
                     if from_date and to_date:
                         event_date = activity['date']
                         if from_date <= event_date <= to_date:
                             events.append(activity)
+                            print(f"📅 Event within date range: {event_date}")
+                        else:
+                            print(f"❌ Event outside date range: {event_date} (not {from_date}-{to_date})")
                     else:
                         events.append(activity)
+                else:
+                    print(f"❌ Event filtered out: {current_event.get('summary')}")
             in_event = False
         elif in_event and line.startswith('SUMMARY:'):
             current_event['summary'] = line[8:]
@@ -809,6 +820,11 @@ def parse_ical_data(ical_content, from_date=None, to_date=None, auto_categorize=
     
     # Remove duplicates by prioritizing "Standplassleder" over "Vakt Standplass"
     events = remove_duplicate_events(events)
+    
+    # Debug: Log all events that will be returned
+    print(f"🎯 Final events to be imported: {len(events)}")
+    for event in events:
+        print(f"📅 Final event: {event['comment']} at {event['startTime']}-{event['endTime']}")
     
     return events
 
@@ -855,6 +871,8 @@ def remove_duplicate_events(events):
 
 def parse_ical_datetime(dt_string):
     """Parse iCal datetime string"""
+    print(f"🕐 Parsing datetime: {dt_string}")
+    
     # Handle different iCal datetime formats
     if 'T' in dt_string and 'Z' in dt_string:
         # Format: 20250108T180000Z
@@ -864,8 +882,11 @@ def parse_ical_datetime(dt_string):
         dt_string = dt_string + '+00:00'
     
     try:
-        return datetime.fromisoformat(dt_string.replace('T', ' ').replace('Z', ''))
-    except:
+        parsed = datetime.fromisoformat(dt_string.replace('T', ' ').replace('Z', ''))
+        print(f"✅ Parsed datetime: {parsed} -> {parsed.strftime('%H:%M')}")
+        return parsed
+    except Exception as e:
+        print(f"❌ Failed to parse datetime: {dt_string} - {e}")
         return None
 
 def convert_event_to_activity(event, day_names, auto_categorize=True):
@@ -916,7 +937,10 @@ def determine_activity_types(summary, day_of_week=None, auto_categorize=True):
         'klargjør', 'klargjøre', 'opplås', 'lås opp', 'lås ned',
         'avslutte', 'avslutt', 'låse', 'lås'
     ]
-    if any(word in summary_lower for word in maintenance_words):
+    
+    # Clean summary for comparison (remove backslashes and normalize)
+    clean_summary = summary_lower.replace('\\', '')
+    if any(word in clean_summary for word in maintenance_words):
         return []
     
     # Check for "Ledig" or "Ikke satt" - mark as Uavklart
@@ -935,7 +959,7 @@ def determine_activity_types(summary, day_of_week=None, auto_categorize=True):
         activities.append('PRS')
     if 'leirdue' in summary_lower:
         activities.append('Leirdue')
-    if 'storviltprøve' in summary_lower or 'storvilt' in summary_lower:
+    if 'storviltprøve' in summary_lower or 'storvilt' in summary_lower or 'kontrollør' in summary_lower:
         activities.append('Storviltprøve')
     if '100m' in summary_lower or '100 m' in summary_lower:
         activities.append('100m')
@@ -967,9 +991,9 @@ def extract_range_officer(summary):
     """Extract range officer from summary"""
     print(f"🔍 Backend extract_range_officer called with: {summary}")
     
-    # Extract person name from summary (e.g., "Thomas Bogdahl - Standplassleder", "Jan-Erik Hansen - Standplassleder")
+    # Extract person name from summary (e.g., "Thomas Bogdahl - Standplassleder", "Jan-Erik Hansen - Standplassleder", "Lasse Hansen - Storviltprøve kontrollør")
     # Use non-greedy match to get everything up to the last " - "
-    match = re.match(r'^(.+?)\s*-\s*([^-]+)$', summary)
+    match = re.match(r'^(.+?)\s*-\s*(.+)$', summary)
     if not match:
         print(f"❌ Backend: No match found for: {summary}")
         return 'Ikke satt'
