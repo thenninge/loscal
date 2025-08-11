@@ -665,6 +665,21 @@ def import_calendar():
         else:
             print("❌ 'Storviltprøve' NOT found in iCal data")
         
+        print("🔍 Searching for 'Lasse Hansen - Storviltprøve kontrollør' in iCal data...")
+        if 'Lasse Hansen - Storviltprøve kontrollør' in ical_data:
+            print("✅ Found 'Lasse Hansen - Storviltprøve kontrollør' in iCal data")
+            # Find the exact line
+            lines = ical_data.split('\n')
+            for i, line in enumerate(lines):
+                if 'Lasse Hansen - Storviltprøve kontrollør' in line:
+                    print(f"📅 Line {i}: {line}")
+                    # Show surrounding lines for context
+                    for j in range(max(0, i-10), min(len(lines), i+11)):
+                        print(f"   {j}: {lines[j]}")
+                    break
+        else:
+            print("❌ 'Lasse Hansen - Storviltprøve kontrollør' NOT found in iCal data")
+        
         print("🔍 Searching for '20250816' (16. august) in iCal data...")
         if '20250816' in ical_data:
             print("✅ Found '20250816' in iCal data")
