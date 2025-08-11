@@ -1021,10 +1021,8 @@ def remove_duplicate_events(events):
                         best_comment = comment
                         break
                 
-                if len(clean_comments) <= 3:
-                    combined_event['comment'] = f"Kombinert: {', '.join(clean_comments)}"
-                else:
-                    combined_event['comment'] = f"Kombinert: {best_comment} + {len(clean_comments)-1} andre"
+                # Always show all comments, regardless of count
+                combined_event['comment'] = f"Kombinert: {', '.join(clean_comments)}"
             
             print(f"🎯 Combined event: {combined_event['comment']} with activities: {unique_activities}")
             filtered_events.append(combined_event)
