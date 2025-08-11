@@ -951,9 +951,18 @@ def remove_duplicate_events(events):
             # Combine all activities from all events
             all_activities = []
             all_colors = []
+            range_officer = "Ikke satt"  # Default
+            
             for event in group_events:
                 all_activities.extend(event['activities'])
                 all_colors.extend(event['colors'])
+                # Find the best range officer (Standplassleder takes priority)
+                if event.get('rangeOfficer') and event['rangeOfficer'] != "Ikke satt":
+                    if 'standplassleder' in event['comment'].lower():
+                        range_officer = event['rangeOfficer']
+                        break  # Standplassleder is highest priority
+                    elif range_officer == "Ikke satt":
+                        range_officer = event['rangeOfficer']
             
             # Remove duplicates while preserving order
             unique_activities = []
@@ -967,7 +976,32 @@ def remove_duplicate_events(events):
             combined_event = base_event.copy()
             combined_event['activities'] = unique_activities
             combined_event['colors'] = unique_colors
-            combined_event['comment'] = f"Kombinert: {', '.join([e['comment'].replace('Importert fra Lorenskog Skytterlag: ', '') for e in group_events])}"
+            combined_event['rangeOfficer'] = range_officer
+            
+            # Clean up the combined comment - remove prefixes and make it cleaner
+            clean_comments = []
+            for event in group_events:
+                comment = event['comment'].replace('Importert fra Lorenskog Skytterlag: ', '')
+                # Remove "Ledig" prefix if it's just a generic slot
+                if comment.startswith('Ledig ') and 'vakt' in comment.lower():
+                    comment = comment.replace('Ledig ', '').replace(' vakt', '')
+                clean_comments.append(comment)
+            
+            # Use the most descriptive comment as base, or create a summary
+            if len(clean_comments) == 1:
+                combined_event['comment'] = clean_comments[0]
+            else:
+                # Find the most descriptive comment (has a person name)
+                best_comment = clean_comments[0]
+                for comment in clean_comments:
+                    if ' - ' in comment:  # Has person name
+                        best_comment = comment
+                        break
+                
+                if len(clean_comments) <= 3:
+                    combined_event['comment'] = f"Kombinert: {', '.join(clean_comments)}"
+                else:
+                    combined_event['comment'] = f"Kombinert: {best_comment} + {len(clean_comments)-1} andre"
             
             print(f"🎯 Combined event: {combined_event['comment']} with activities: {unique_activities}")
             filtered_events.append(combined_event)
