@@ -957,18 +957,26 @@ def remove_duplicate_events(events):
             for event in group_events:
                 all_activities.extend(event['activities'])
                 all_colors.extend(event['colors'])
-                # Find the best range officer (Standplassleder takes priority)
-                if event.get('rangeOfficer') and event['rangeOfficer'] != "Ikke satt":
-                    if 'standplassleder' in event['comment'].lower():
-                        range_officer = event['rangeOfficer']
-                        has_standplassleder = True
-                        break  # Standplassleder is highest priority
-                    elif range_officer == "Ikke satt":
-                        range_officer = event['rangeOfficer']
                 
                 # Check if any event has Standplassleder
                 if 'standplassleder' in event['comment'].lower():
                     has_standplassleder = True
+                    
+                    # Extract range officer name directly from comment if it's a Standplassleder
+                    if ' - ' in event['comment']:
+                        # Try to extract name from "Name - Standplassleder" format
+                        comment_parts = event['comment'].replace('Importert fra Lorenskog Skytterlag: ', '').split(' - ')
+                        if len(comment_parts) >= 2 and 'standplassleder' in comment_parts[1].lower():
+                            extracted_name = comment_parts[0].strip()
+                            if extracted_name and extracted_name != "Ledig":
+                                range_officer = extracted_name
+                                print(f"🔍 DEBUG: Extracted range officer '{extracted_name}' from comment: {event['comment']}")
+                                break  # Standplassleder is highest priority
+                    
+                    # Fallback to existing rangeOfficer if extraction failed
+                    elif event.get('rangeOfficer') and event['rangeOfficer'] != "Ikke satt":
+                        range_officer = event['rangeOfficer']
+                        break
             
             # Remove duplicates while preserving order
             unique_activities = []
