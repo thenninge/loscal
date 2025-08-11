@@ -941,12 +941,15 @@ def remove_duplicate_events(events):
                 summary = event['comment'].lower()
                 print(f"📋 Checking event: {summary}")
                 
-                # Priority order: Standplassleder > Vakt Standplass > others
+                # Priority order: Standplassleder > Storviltprøve kontrollør > Vakt Standplass > others
                 if 'standplassleder' in summary:
                     print(f"✅ Found Standplassleder, keeping: {summary}")
                     best_event = event
                     break  # Highest priority, no need to check others
-                elif 'vakt standplass' in summary and 'standplassleder' not in best_event['comment'].lower():
+                elif 'storviltprøve kontrollør' in summary and 'standplassleder' not in best_event['comment'].lower():
+                    print(f"✅ Found Storviltprøve kontrollør, keeping: {summary}")
+                    best_event = event
+                elif 'vakt standplass' in summary and 'standplassleder' not in best_event['comment'].lower() and 'storviltprøve kontrollør' not in best_event['comment'].lower():
                     print(f"⚠️ Found Vakt Standplass, keeping: {summary}")
                     best_event = event
             
