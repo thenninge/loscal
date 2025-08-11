@@ -143,6 +143,21 @@ body {
     font-weight: bold;
 }
 
+/* Footer styling */
+.app-footer {
+    text-align: center;
+    padding: 1rem 0;
+    margin-top: 2rem;
+    border-top: 1px solid #f0f0f0;
+}
+
+.app-footer span {
+    font-size: 0.7rem;
+    color: #d1d5db;
+    font-weight: 300;
+    letter-spacing: 0.5px;
+}
+
 .btn-small {
     padding: 0.25rem 0.75rem;
     font-size: 0.85rem;
