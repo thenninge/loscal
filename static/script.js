@@ -592,7 +592,7 @@ function renderCalendar() {
                     <div class="day-number">${day}</div>
                     <div class="day-events">
                         ${dayEvents.map(event => `
-                            <div class="day-event" style="background-color: ${Array.isArray(event.colors) ? event.colors[0] : event.colors}">
+                            <div class="day-event" style="background: linear-gradient(45deg, ${Array.isArray(event.colors) ? event.colors.join(', ') : event.colors})">
                                 <span class="event-text">${event.startTime} ${event.activities.join(' + ')}</span>
                             </div>
                         `).join('')}
