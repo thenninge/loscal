@@ -952,6 +952,7 @@ def remove_duplicate_events(events):
             all_activities = []
             all_colors = []
             range_officer = "Ikke satt"  # Default
+            has_standplassleder = False
             
             for event in group_events:
                 all_activities.extend(event['activities'])
@@ -960,9 +961,14 @@ def remove_duplicate_events(events):
                 if event.get('rangeOfficer') and event['rangeOfficer'] != "Ikke satt":
                     if 'standplassleder' in event['comment'].lower():
                         range_officer = event['rangeOfficer']
+                        has_standplassleder = True
                         break  # Standplassleder is highest priority
                     elif range_officer == "Ikke satt":
                         range_officer = event['rangeOfficer']
+                
+                # Check if any event has Standplassleder
+                if 'standplassleder' in event['comment'].lower():
+                    has_standplassleder = True
             
             # Remove duplicates while preserving order
             unique_activities = []
@@ -971,6 +977,12 @@ def remove_duplicate_events(events):
                 if activity not in unique_activities:
                     unique_activities.append(activity)
                     unique_colors.append(all_colors[i])
+            
+            # If we have a Standplassleder, remove "Uavklart" from activities
+            if has_standplassleder and "Uavklart" in unique_activities:
+                uavklart_index = unique_activities.index("Uavklart")
+                unique_activities.pop(uavklart_index)
+                unique_colors.pop(uavklart_index)
             
             # Create combined event
             combined_event = base_event.copy()
