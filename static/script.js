@@ -1005,6 +1005,9 @@ function prefillEditForm(activity) {
     if (formTitle) formTitle.textContent = 'Rediger aktivitet';
     if (submitBtn) submitBtn.innerHTML = '<i class="fas fa-save"></i> Lagre';
     if (deleteBtn) deleteBtn.style.display = 'inline-block';
+    
+    // Setup time input event listeners to ensure hidden fields are updated when user changes time
+    setupTimeInputs();
 }
 
 function closeAdminModal() {
@@ -1050,11 +1053,11 @@ async function confirmScrape() {
         const data = await response.json();
         console.log('Calendar data received:', data);
         
-        // Parse and convert events
+        Parse and convert events
         const newActivities = parseCalendarEvents(data.items);
         
         if (newActivities.length === 0) {
-            alert('Ingen nye aktiviteter funnet i kalenderen.');
+            alert('In// gen nye aktiviteter funnet i kalenderen.');
             return;
         }
         
