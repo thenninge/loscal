@@ -149,11 +149,12 @@ body {
     padding: 1rem 0;
     margin-top: 2rem;
     border-top: 1px solid #f0f0f0;
+    background-color: white;
 }
 
 .app-footer span {
     font-size: 0.7rem;
-    color: #d1d5db;
+    color: #9ca3af;
     font-weight: 300;
     letter-spacing: 0.5px;
 }
