@@ -654,8 +654,27 @@ def import_calendar():
         print("🔍 Searching for 'Storviltprøve' in iCal data...")
         if 'Storviltprøve' in ical_data:
             print("✅ Found 'Storviltprøve' in iCal data")
+            # Find all lines containing Storviltprøve
+            lines = ical_data.split('\n')
+            for i, line in enumerate(lines):
+                if 'Storviltprøve' in line:
+                    print(f"📅 Line {i}: {line}")
+                    # Show surrounding lines for context
+                    for j in range(max(0, i-5), min(len(lines), i+6)):
+                        print(f"   {j}: {lines[j]}")
         else:
             print("❌ 'Storviltprøve' NOT found in iCal data")
+        
+        print("🔍 Searching for '20250816' (16. august) in iCal data...")
+        if '20250816' in ical_data:
+            print("✅ Found '20250816' in iCal data")
+            # Find all lines containing 20250816
+            lines = ical_data.split('\n')
+            for i, line in enumerate(lines):
+                if '20250816' in line:
+                    print(f"📅 Line {i}: {line}")
+        else:
+            print("❌ '20250816' NOT found in iCal data")
         
         events = parse_ical_data(ical_data, from_date, to_date, auto_categorize)
         print(f"Parsed events: {len(events)} events found")
