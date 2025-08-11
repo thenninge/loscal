@@ -990,6 +990,9 @@ def remove_duplicate_events(events):
             combined_event['colors'] = unique_colors
             combined_event['rangeOfficer'] = range_officer
             
+            print(f"🔍 DEBUG: range_officer = '{range_officer}'")
+            print(f"🔍 DEBUG: combined_event['rangeOfficer'] = '{combined_event['rangeOfficer']}'")
+            
             # Clean up the combined comment - remove prefixes and make it cleaner
             clean_comments = []
             for event in group_events:
