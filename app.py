@@ -978,8 +978,8 @@ def remove_duplicate_events(events):
                     unique_activities.append(activity)
                     unique_colors.append(all_colors[i])
             
-            # If we have a Standplassleder, remove "Uavklart" from activities
-            if has_standplassleder and "Uavklart" in unique_activities:
+            # If we have a named Standplassleder, remove "Uavklart" from activities
+            if range_officer != "Ikke satt" and "Uavklart" in unique_activities:
                 uavklart_index = unique_activities.index("Uavklart")
                 unique_activities.pop(uavklart_index)
                 unique_colors.pop(uavklart_index)
