@@ -150,6 +150,7 @@ body {
     margin-top: 2rem;
     border-top: 1px solid #2c3e50;
     background-color: white;
+    width: 100%;
 }
 
 .app-footer span {
