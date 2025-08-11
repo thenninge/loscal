@@ -381,8 +381,15 @@ function setupEventListeners() {
     
     // Delete all activities button
     document.getElementById('deleteAllActivitiesBtnMain').addEventListener('click', () => {
-        openAdminModal();
-        switchAdminPanel('deleteActivitiesPanel');
+        if (!adminMode) {
+            // If not in admin mode, show PIN dialog first
+            window.deleteButtonClicked = true;
+            showPinDialog();
+        } else {
+            // If already in admin mode, just open modal and switch to delete panel
+            document.getElementById('adminModal').classList.add('active');
+            switchAdminPanel('deleteActivitiesPanel');
+        }
     });
     
     // Close admin modal button
@@ -853,6 +860,15 @@ function verifyPin() {
     if (correctPins.includes(enteredPin)) {
         closePinDialog();
         toggleAdminMode();
+        
+        // Check if this was triggered by the delete button
+        if (window.deleteButtonClicked) {
+            // If delete button was clicked, open admin modal and switch to delete panel
+            document.getElementById('adminModal').classList.add('active');
+            switchAdminPanel('deleteActivitiesPanel');
+            window.deleteButtonClicked = false; // Reset flag
+        }
+        
         pinInput.value = ''; // Clear input
     } else {
         pinInput.value = ''; // Clear input
