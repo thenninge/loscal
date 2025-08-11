@@ -22,8 +22,5 @@
   ],
   "env": {
     "PYTHONPATH": "."
-  },
-  "analytics": {
-    "enabled": true
   }
 } 
