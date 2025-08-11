@@ -889,6 +889,18 @@ def parse_ical_data(ical_content, from_date=None, to_date=None, auto_categorize=
                 i += 1
             current_event['description'] = description
             continue  # Skip the increment at the end
+        elif in_event and line.startswith('UID:'):
+            current_event['uid'] = line[4:]
+        elif in_event and line.startswith('CREATED:'):
+            current_event['created'] = line[8:]
+        elif in_event and line.startswith('LAST-MODIFIED:'):
+            current_event['last_modified'] = line[14:]
+        elif in_event and line.startswith('SEQUENCE:'):
+            current_event['sequence'] = line[9:]
+        elif in_event and line.startswith('STATUS:'):
+            current_event['status'] = line[7:]
+        elif in_event and line.startswith('TRANSP:'):
+            current_event['transp'] = line[7:]
         
         i += 1
     
