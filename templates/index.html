@@ -434,9 +434,16 @@
     </footer>
 
     <script src="{{ url_for('static', filename='script.js') }}"></script>
-    <script type="module">
-        import { inject } from '@vercel/analytics';
-        inject();
+    <!-- Vercel Analytics -->
+    <script>
+        window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+    </script>
+    <script defer src="/_vercel/insights/script.js"></script>
+    <!-- Fallback for local development -->
+    <script>
+        if (typeof window.va === 'undefined') {
+            console.log('Vercel Analytics not available in local development');
+        }
     </script>
 </body>
 </html> 
