@@ -1053,11 +1053,11 @@ async function confirmScrape() {
         const data = await response.json();
         console.log('Calendar data received:', data);
         
-        Parse and convert events
+        // Parse and convert events
         const newActivities = parseCalendarEvents(data.items);
         
         if (newActivities.length === 0) {
-            alert('In// gen nye aktiviteter funnet i kalenderen.');
+            alert('Ingen nye aktiviteter funnet i kalenderen.');
             return;
         }
         
