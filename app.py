@@ -915,7 +915,7 @@ def parse_ical_data(ical_content, from_date=None, to_date=None, auto_categorize=
     return events
 
 def remove_duplicate_events(events):
-    """Remove duplicate events by prioritizing Standplassleder over Vakt Standplass"""
+    """Combine duplicate events by merging their activities instead of choosing one"""
     # Group events by date and time
     event_groups = {}
     
@@ -925,7 +925,7 @@ def remove_duplicate_events(events):
             event_groups[key] = []
         event_groups[key].append(event)
     
-    # For each group, keep the event with highest priority
+    # For each group, combine activities or choose the best one
     filtered_events = []
     
     for key, group_events in event_groups.items():
@@ -933,28 +933,44 @@ def remove_duplicate_events(events):
             # No duplicates, keep the event
             filtered_events.append(group_events[0])
         else:
-            # Duplicates found, prioritize based on summary
+            # Duplicates found, combine activities
             print(f"🔍 Found duplicates for key: {key}")
-            best_event = group_events[0]  # Default to first event
+            for event in group_events:
+                print(f"📋 Event: {event['comment']} with activities: {event['activities']}")
             
+            # Choose the base event (prefer Standplassleder, then Storviltprøve kontrollør)
+            base_event = group_events[0]
             for event in group_events:
                 summary = event['comment'].lower()
-                print(f"📋 Checking event: {summary}")
-                
-                # Priority order: Standplassleder > Storviltprøve kontrollør > Vakt Standplass > others
                 if 'standplassleder' in summary:
-                    print(f"✅ Found Standplassleder, keeping: {summary}")
-                    best_event = event
-                    break  # Highest priority, no need to check others
-                elif 'storviltprøve kontrollør' in summary and 'standplassleder' not in best_event['comment'].lower():
-                    print(f"✅ Found Storviltprøve kontrollør, keeping: {summary}")
-                    best_event = event
-                elif 'vakt standplass' in summary and 'standplassleder' not in best_event['comment'].lower() and 'storviltprøve kontrollør' not in best_event['comment'].lower():
-                    print(f"⚠️ Found Vakt Standplass, keeping: {summary}")
-                    best_event = event
+                    base_event = event
+                    break
+                elif 'storviltprøve kontrollør' in summary and 'standplassleder' not in base_event['comment'].lower():
+                    base_event = event
             
-            print(f"🎯 Final choice: {best_event['comment']}")
-            filtered_events.append(best_event)
+            # Combine all activities from all events
+            all_activities = []
+            all_colors = []
+            for event in group_events:
+                all_activities.extend(event['activities'])
+                all_colors.extend(event['colors'])
+            
+            # Remove duplicates while preserving order
+            unique_activities = []
+            unique_colors = []
+            for i, activity in enumerate(all_activities):
+                if activity not in unique_activities:
+                    unique_activities.append(activity)
+                    unique_colors.append(all_colors[i])
+            
+            # Create combined event
+            combined_event = base_event.copy()
+            combined_event['activities'] = unique_activities
+            combined_event['colors'] = unique_colors
+            combined_event['comment'] = f"Kombinert: {', '.join([e['comment'].replace('Importert fra Lorenskog Skytterlag: ', '') for e in group_events])}"
+            
+            print(f"🎯 Combined event: {combined_event['comment']} with activities: {unique_activities}")
+            filtered_events.append(combined_event)
     
     return filtered_events
 
