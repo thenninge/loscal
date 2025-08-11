@@ -40,10 +40,9 @@ def get_db_connection():
     """Get database connection"""
     if IS_VERCEL:
         # Import pg8000 dynamically for Vercel
-        global pg8000, RealDictCursor
+        global pg8000
         if pg8000 is None:
             import pg8000
-            from pg8000.extras import RealDictCursor
         
         # Supabase PostgreSQL connection (with connection pooling for Vercel)
         DATABASE_URL = "postgresql://postgres.toofqfonichtzexpuvzc:sauer200STR!!@aws-0-eu-north-1.pooler.supabase.com:6543/postgres"
