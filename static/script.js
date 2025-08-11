@@ -386,6 +386,8 @@ function setupEventListeners() {
     document.getElementById('deleteAllActivitiesBtnMain').addEventListener('click', () => {
         // Open admin modal and switch to delete panel directly
         document.getElementById('adminModal').classList.add('active');
+        document.getElementById('pinSection').classList.add('hidden');
+        document.getElementById('adminPanel').classList.remove('hidden');
         switchAdminPanel('deleteActivitiesPanel');
     });
     
