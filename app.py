@@ -838,8 +838,10 @@ def parse_ical_data(ical_content, from_date=None, to_date=None, auto_categorize=
     # Day names for Norwegian
     day_names = ['Mandag', 'Tirsdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lørdag', 'Søndag']
     
-    for line in ical_content.split('\n'):
-        line = line.strip()
+    lines = ical_content.split('\n')
+    i = 0
+    while i < len(lines):
+        line = lines[i].strip()
         
         if line.startswith('BEGIN:VEVENT'):
             current_event = {}
@@ -847,6 +849,7 @@ def parse_ical_data(ical_content, from_date=None, to_date=None, auto_categorize=
         elif line.startswith('END:VEVENT'):
             if current_event and 'summary' in current_event:
                 print(f"📅 Processing event: {current_event.get('summary')} at {current_event.get('start')}")
+                print(f"📋 Full event data: {current_event}")
                 # Convert to activity format
                 activity = convert_event_to_activity(current_event, day_names, auto_categorize)
                 if activity:
@@ -865,13 +868,29 @@ def parse_ical_data(ical_content, from_date=None, to_date=None, auto_categorize=
                     print(f"❌ Event filtered out: {current_event.get('summary')}")
             in_event = False
         elif in_event and line.startswith('SUMMARY:'):
-            current_event['summary'] = line[8:]
+            # Handle multi-line SUMMARY
+            summary = line[8:]
+            i += 1
+            while i < len(lines) and lines[i].startswith(' '):
+                summary += lines[i][1:]  # Remove leading space
+                i += 1
+            current_event['summary'] = summary
+            continue  # Skip the increment at the end
         elif in_event and line.startswith('DTSTART:'):
             current_event['start'] = parse_ical_datetime(line[8:])
         elif in_event and line.startswith('DTEND:'):
             current_event['end'] = parse_ical_datetime(line[6:])
         elif in_event and line.startswith('DESCRIPTION:'):
-            current_event['description'] = line[12:]
+            # Handle multi-line DESCRIPTION
+            description = line[12:]
+            i += 1
+            while i < len(lines) and lines[i].startswith(' '):
+                description += lines[i][1:]  # Remove leading space
+                i += 1
+            current_event['description'] = description
+            continue  # Skip the increment at the end
+        
+        i += 1
     
     # Remove duplicates by prioritizing "Standplassleder" over "Vakt Standplass"
     events = remove_duplicate_events(events)
