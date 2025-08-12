@@ -374,7 +374,8 @@ def get_activities():
                         'activities': activities_data,
                         'colors': colors_data,
                         'comment': row[8],
-                        'rangeOfficer': row[9]
+                        'rangeOfficer': row[9],
+                        'source': row[10] if len(row) > 10 else 'manual'
                     })
                 except Exception as e:
                     print(f"Error processing PostgreSQL row {row[0]}: {str(e)}")
@@ -417,7 +418,8 @@ def get_activities():
                         'activities': activities_data,
                         'colors': colors_data,
                         'comment': row[8],
-                        'rangeOfficer': row[9]
+                        'rangeOfficer': row[9],
+                        'source': row[12] if len(row) > 12 else 'manual'
                     })
                 except Exception as e:
                     print(f"Error processing SQLite row {row[0]}: {str(e)}")
@@ -470,8 +472,8 @@ def add_activity():
             # PostgreSQL syntax
             cursor.execute('''
                 INSERT INTO activities 
-                (id, iCalUID, date, dayOfWeek, startTime, endTime, activities, colors, comment, rangeOfficer)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                (id, iCalUID, date, dayOfWeek, startTime, endTime, activities, colors, comment, rangeOfficer, source)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 ON CONFLICT (id) DO UPDATE SET
                     iCalUID = EXCLUDED.iCalUID,
                     date = EXCLUDED.date,
@@ -482,6 +484,7 @@ def add_activity():
                     colors = EXCLUDED.colors,
                     comment = EXCLUDED.comment,
                     rangeOfficer = EXCLUDED.rangeOfficer,
+                    source = EXCLUDED.source,
                     updated_at = CURRENT_TIMESTAMP
             ''', (
                 data['id'],
@@ -493,14 +496,15 @@ def add_activity():
                 json.dumps(data['activities']),
                 json.dumps(data['colors']),
                 data.get('comment', ''),
-                data.get('rangeOfficer', '')
+                data.get('rangeOfficer', ''),
+                data.get('source', 'manual')
             ))
         else:
             # SQLite syntax
             cursor.execute('''
                 INSERT OR REPLACE INTO activities 
-                (id, iCalUID, date, dayOfWeek, startTime, endTime, activities, colors, comment, rangeOfficer)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (id, iCalUID, date, dayOfWeek, startTime, endTime, activities, colors, comment, rangeOfficer, source)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
                 data['id'],
                 data.get('iCalUID'),
@@ -511,7 +515,8 @@ def add_activity():
                 json.dumps(data['activities']),
                 json.dumps(data['colors']),
                 data.get('comment', ''),
-                data.get('rangeOfficer', '')
+                data.get('rangeOfficer', ''),
+                data.get('source', 'manual')
             ))
         
         conn.commit()
@@ -542,7 +547,7 @@ def update_activity(activity_id):
             UPDATE activities 
             SET date = %s, dayOfWeek = %s, startTime = %s, endTime = %s, 
                 activities = %s, colors = %s, comment = %s, rangeOfficer = %s,
-                updated_at = CURRENT_TIMESTAMP
+                source = %s, updated_at = CURRENT_TIMESTAMP
             WHERE id = %s
         ''', (
             data['date'],
@@ -553,6 +558,7 @@ def update_activity(activity_id):
             json.dumps(data['colors']),
             data.get('comment', ''),
             data.get('rangeOfficer', ''),
+            data.get('source', 'manual'),
             activity_id
         ))
     else:
@@ -560,7 +566,7 @@ def update_activity(activity_id):
             UPDATE activities 
             SET date = ?, dayOfWeek = ?, startTime = ?, endTime = ?, 
                 activities = ?, colors = ?, comment = ?, rangeOfficer = ?,
-                updated_at = CURRENT_TIMESTAMP
+                source = ?, updated_at = CURRENT_TIMESTAMP
             WHERE id = ?
         ''', (
             data['date'],
@@ -571,6 +577,7 @@ def update_activity(activity_id):
             json.dumps(data['colors']),
             data.get('comment', ''),
             data.get('rangeOfficer', ''),
+            data.get('source', 'manual'),
             activity_id
         ))
     
@@ -702,6 +709,10 @@ def import_calendar():
                 'imported_count': 0
             })
         
+        print(f"DEBUG: About to process {len(events)} events")
+        for i, event in enumerate(events):
+            print(f"DEBUG: Event {i+1}: {event.get('comment', 'No comment')} - Activities: {event.get('activities', [])}")
+        
         # Save events to database
         # Ensure database is initialized
         init_db()
@@ -716,12 +727,12 @@ def import_calendar():
         cursor = conn.cursor()
         
         imported_count = 0
-        updated_count = 0
         
         try:
             for event in events:
+                # Simple insert or update logic - no manual check
                 if IS_VERCEL:
-                    # PostgreSQL syntax
+                    # PostgreSQL syntax - use ON CONFLICT DO UPDATE
                     cursor.execute('''
                         INSERT INTO activities (id, date, dayOfWeek, startTime, endTime, 
                                               activities, colors, comment, rangeOfficer, source, created_at, updated_at)
@@ -749,11 +760,12 @@ def import_calendar():
                         event['rangeOfficer'],
                         event['source']
                     ))
+                    imported_count += 1
                 else:
-                    # SQLite syntax
+                    # SQLite syntax - use INSERT OR REPLACE
                     cursor.execute('''
                         INSERT OR REPLACE INTO activities (id, date, dayOfWeek, startTime, endTime, 
-                                              activities, colors, comment, rangeOfficer, source, created_at, updated_at)
+                                                         activities, colors, comment, rangeOfficer, source, created_at, updated_at)
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
                     ''', (
                         event['id'],
@@ -767,12 +779,7 @@ def import_calendar():
                         event['rangeOfficer'],
                         event['source']
                     ))
-                
-                # Check if this was an insert or update by checking if row was affected
-                if cursor.rowcount > 0:
                     imported_count += 1
-                else:
-                    updated_count += 1
             
             # Commit the transaction
             conn.commit()
@@ -796,9 +803,7 @@ def import_calendar():
         
         message_parts = []
         if imported_count > 0:
-            message_parts.append(f'{imported_count} nye aktiviteter importert')
-        if updated_count > 0:
-            message_parts.append(f'{updated_count} eksisterende aktiviteter oppdatert')
+            message_parts.append(f'{imported_count} aktiviteter importert/oppdatert')
         
         if not message_parts:
             message_parts.append('Ingen endringer')
@@ -807,7 +812,6 @@ def import_calendar():
             'success': True,
             'message': f'Suksess! {", ".join(message_parts)} fra Lorenskog Skytterlag kalender',
             'imported_count': imported_count,
-            'updated_count': updated_count,
             'debug_info': {
                 'total_events_processed': len(events) if 'events' in locals() else 0,
                 'events_processed': [event['comment'] for event in events[:5]] if 'events' in locals() else []
@@ -1077,7 +1081,10 @@ def parse_ical_datetime(dt_string):
 
 def convert_event_to_activity(event, day_names, auto_categorize=True):
     """Convert iCal event to activity format"""
+    print(f"DEBUG: convert_event_to_activity called with event: {event}")
+    
     if not event.get('start') or not event.get('summary'):
+        print(f"DEBUG: Missing start or summary, returning None")
         return None
     
     start_dt = event['start']
@@ -1088,8 +1095,11 @@ def convert_event_to_activity(event, day_names, auto_categorize=True):
     
     # Determine activity types based on summary and day of week
     summary = event['summary']
+    print(f"DEBUG: Converting event: {summary}")
     activity_types = determine_activity_types(summary, day_of_week, auto_categorize)
+    print(f"DEBUG: Activity types determined: {activity_types}")
     if not activity_types:
+        print(f"DEBUG: No activity types found, skipping event: {summary}")
         return None  # Skip maintenance events
     
     # Extract range officer
@@ -1098,7 +1108,7 @@ def convert_event_to_activity(event, day_names, auto_categorize=True):
     # Get colors for multiple activities
     colors = [get_color_for_activity(activity_type) for activity_type in activity_types]
     
-    return {
+    result = {
         'id': f"ical-{start_dt.strftime('%Y%m%d%H%M%S')}-{hash(summary) % 10000}",
         'date': start_dt.strftime('%Y-%m-%d'),
         'dayOfWeek': day_names[(start_dt.weekday()) % 7],
@@ -1110,6 +1120,9 @@ def convert_event_to_activity(event, day_names, auto_categorize=True):
         'rangeOfficer': range_officer,
         'source': 'imported'
     }
+    
+    print(f"DEBUG: Returning activity: {result}")
+    return result
 
 def determine_activity_types(summary, day_of_week=None, auto_categorize=True):
     """Determine activity types from summary and day of week - can return multiple types"""
@@ -1268,28 +1281,57 @@ def remove_duplicates():
         date, start_time, end_time, count = duplicate
         
         # Get all activities in this time slot
-        cursor.execute('''
-            SELECT id, comment FROM activities 
-            WHERE date = %s AND startTime = %s AND endTime = %s
-        ''', (date, start_time, end_time))
+        if IS_VERCEL:
+            cursor.execute('''
+                SELECT id, comment, source FROM activities 
+                WHERE date = %s AND startTime = %s AND endTime = %s
+            ''', (date, start_time, end_time))
+        else:
+            cursor.execute('''
+                SELECT id, comment, source FROM activities 
+                WHERE date = ? AND startTime = ? AND endTime = ?
+            ''', (date, start_time, end_time))
         
         activities = cursor.fetchall()
         best_id = activities[0][0]  # Default to first
+        best_priority = 0
         
-        # Find the best activity (prioritize Standplassleder over Vakt Standplass)
-        for activity_id, comment in activities:
-            comment_lower = comment.lower()
-            if 'standplassleder' in comment_lower:
-                best_id = activity_id
-                break  # Highest priority, no need to check others
-            elif 'vakt standplass' in comment_lower and 'standplassleder' not in comment_lower:
+        # Find the best activity with priority:
+        # 1. Manual activities (highest priority)
+        # 2. Standplassleder (imported)
+        # 3. Vakt Standplass (imported)
+        # 4. Other imported activities (lowest priority)
+        for activity_id, comment, source in activities:
+            priority = 0
+            
+            # Manual activities get highest priority
+            if source == 'manual':
+                priority = 100
+            else:
+                # For imported activities, prioritize by content
+                comment_lower = comment.lower() if comment else ''
+                if 'standplassleder' in comment_lower:
+                    priority = 50
+                elif 'vakt standplass' in comment_lower:
+                    priority = 25
+                else:
+                    priority = 10
+            
+            if priority > best_priority:
+                best_priority = priority
                 best_id = activity_id
         
         # Delete all except the best one
-        cursor.execute('''
-            DELETE FROM activities 
-            WHERE date = %s AND startTime = %s AND endTime = %s AND id != %s
-        ''', (date, start_time, end_time, best_id))
+        if IS_VERCEL:
+            cursor.execute('''
+                DELETE FROM activities 
+                WHERE date = %s AND startTime = %s AND endTime = %s AND id != %s
+            ''', (date, start_time, end_time, best_id))
+        else:
+            cursor.execute('''
+                DELETE FROM activities 
+                WHERE date = ? AND startTime = ? AND endTime = ? AND id != ?
+            ''', (date, start_time, end_time, best_id))
     
     conn.commit()
     conn.close()

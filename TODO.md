@@ -2,7 +2,36 @@
 
 ## 🚀 Fremtidige Forbedringer
 
-### 1. **iCalUID-basert Synkronisering**
+### 1. **Duplikatprioritering: Manuell vs Importert**
+**Prioritet:** Medium  
+**Beskrivelse:** Implementer logikk for å prioritere manuelt opprettede aktiviteter over importerte ved duplikat-håndtering
+
+#### Funksjonalitet:
+- Ved duplikater: Behold manuelt opprettede aktiviteter, slett importerte
+- Visuell indikasjon av hvilke aktiviteter som er manuelle vs importerte
+- Admin-panel som viser statistikk over manuelle vs importerte aktiviteter
+- Mulighet for å manuelt endre prioritet
+
+#### Teknisk:
+```python
+# Duplikat-håndtering logikk:
+def handle_duplicates(activities):
+    # Grupper etter dato, starttid, sluttid
+    # For hver gruppe:
+    #   - Prioriter manuelle aktiviteter (source='manual')
+    #   - Slett importerte aktiviteter (source='imported')
+    #   - Behold den beste manuelle aktiviteten
+```
+
+#### Implementering:
+- [ ] Oppdater `remove_duplicates()` funksjon
+- [ ] Legg til prioritetslogikk basert på `source` felt
+- [ ] Test med blandet manuell/importert data
+- [ ] Oppdater frontend for å vise prioritet
+
+---
+
+### 2. **iCalUID-basert Synkronisering**
 **Prioritet:** Høy  
 **Beskrivelse:** Bruk unik ID fra ekstern kalender for smart synkronisering
 
@@ -34,7 +63,7 @@ function syncWithExternalCalendar() {
 
 ---
 
-### 2. **Tidsbestemt Kategorisering**
+### 3. **Tidsbestemt Kategorisering**
 **Prioritet:** Medium  
 **Beskrivelse:** Bruk faste ukeprogrammer for bedre kategorisering av importert kalender
 
@@ -125,30 +154,4 @@ const weeklySchedule = {
 #### **2. API Endpoints**
 - [ ] `/api/activities` - CRUD operasjoner
 - [ ] `/api/import` - Kalender import
-- [ ] `/api/duplicates` - Duplikat håndtering
-- [ ] Error handling og validering
-
-#### **3. Miljøvariabler**
-- [ ] Google Calendar API key
-- [ ] Database connection string
-- [ ] App konfigurasjon
-- [ ] Production vs development settings
-
-#### **4. Frontend Tilpasninger**
-- [ ] Oppdater alle `fetch()` calls til API endpoints
-- [ ] Fjern localStorage kode
-- [ ] Legg til loading states
-- [ ] Error handling i UI
-
-#### **5. Deployment Konfigurasjon**
-- [ ] `requirements.txt` for Python dependencies
-- [ ] `app.py` for Databutton
-- [ ] Static file serving
-- [ ] CORS konfigurasjon
-
-### **Databutton Spesifikke Hensyn:**
-- **Stateless design** - ikke avhengig av server state
-- **API-first approach** - all data via REST endpoints
-- **Error handling** - robust feilhåndtering
-- **Performance** - caching og optimalisering
-- **Security** - validering av input/output
+- [ ] `/api/duplicates`

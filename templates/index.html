@@ -16,6 +16,12 @@
                 <span>Lørenskog Skytterlag</span>
             </h1>
                     <div class="header-controls">
+            <button id="wwwBtn" class="btn btn-secondary" title="Besøk Lørenskog Skytterlag hjemmeside" onclick="openWebsite()">
+                <i class="fas fa-globe"></i>
+            </button>
+            <button id="facebookBtn" class="btn btn-secondary" title="Besøk Facebook-gruppen" onclick="openFacebookGroup()">
+                <i class="fab fa-facebook"></i>
+            </button>
             <button id="viewToggle" class="btn btn-secondary">
                 <i class="fas fa-list"></i> Liste
             </button>
@@ -368,6 +374,20 @@
                         <div id="checkDuplicatesPanel" class="admin-panel">
                             <h4>Sjekk for duplikater</h4>
                             <p>Finn og fjern duplikate aktiviteter basert på dato og tid.</p>
+                            <div class="duplicate-info">
+                                <div class="info-item">
+                                    <i class="fas fa-info-circle"></i>
+                                    <span><strong>Prioritering ved sletting:</strong></span>
+                                </div>
+                                <div class="info-item" style="margin-left: 1rem;">
+                                    <i class="fas fa-edit" style="color: #28a745;"></i>
+                                    <span>1. Manuelt redigerte aktiviteter (beholdes)</span>
+                                </div>
+                                <div class="info-item" style="margin-left: 1rem;">
+                                    <i class="fas fa-download" style="color: #6c757d;"></i>
+                                    <span>2. Importerte aktiviteter (slettes hvis duplikat)</span>
+                                </div>
+                            </div>
                             <div id="duplicatesResult" class="duplicates-result">
                                 <p>Klikk "Sjekk duplikater" for å analysere dataene.</p>
                             </div>
@@ -428,7 +448,7 @@
 
         <!-- Footer -->
         <footer class="app-footer">
-            <span>A product by Cold Barrel Adjacent - 2025</span>
+            <span>Sandbekken IT & Drift - 2025 - <a href="https://www.instagram.com/cold_barrel_adjacent/" target="_blank" class="footer-name-link">Tomas Henninge</a> <a href="https://www.instagram.com/cold_barrel_adjacent/" target="_blank" class="footer-instagram-link"><i class="fab fa-instagram"></i></a></span>
         </footer>
     </div>
 

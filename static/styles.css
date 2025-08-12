@@ -160,6 +160,34 @@ body {
     letter-spacing: 0.5px;
 }
 
+/* Footer Instagram link - very subtle */
+.footer-instagram-link {
+    color: #1f2937;
+    text-decoration: none;
+    margin-left: 0.2rem;
+    opacity: 0.3;
+    transition: opacity 0.2s ease;
+}
+
+.footer-instagram-link:hover {
+    opacity: 0.6;
+}
+
+.footer-instagram-link i {
+    font-size: 0.6rem;
+}
+
+/* Footer name link - looks like normal text */
+.footer-name-link {
+    color: inherit;
+    text-decoration: none;
+    transition: text-decoration 0.2s ease;
+}
+
+.footer-name-link:hover {
+    text-decoration: underline;
+}
+
 .btn-small {
     padding: 0.25rem 0.75rem;
     font-size: 0.85rem;
@@ -180,6 +208,41 @@ body {
     transform: scale(1.1);
 }
 
+/* Facebook button styling */
+#facebookBtn {
+    background: #1877f2; /* Facebook blue */
+    color: white;
+    border: none;
+}
+
+#facebookBtn:hover {
+    background: #166fe5; /* Darker Facebook blue on hover */
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(24, 119, 242, 0.3);
+}
+
+#facebookBtn i {
+    color: white;
+    font-weight: bold;
+}
+
+/* WWW button styling */
+#wwwBtn {
+    background: #10b981; /* Green color for website */
+    color: white;
+    border: none;
+}
+
+#wwwBtn:hover {
+    background: #059669; /* Darker green on hover */
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+}
+
+#wwwBtn i {
+    color: white;
+    font-weight: bold;
+}
 
 
 .btn-close {

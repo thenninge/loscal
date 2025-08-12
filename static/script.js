@@ -8,6 +8,20 @@ let adminMode = false;
 // Initialize openingHours as empty array
 let openingHours = [];
 
+// Facebook group function
+function openFacebookGroup() {
+    if (confirm('Vil du åpne Lørenskog Skytterlag Facebook-gruppen?')) {
+        window.open('https://www.facebook.com/groups/lorenskogskytterlag', '_blank');
+    }
+}
+
+// Website function
+function openWebsite() {
+    if (confirm('Vil du åpne Lørenskog Skytterlag hjemmeside?')) {
+        window.open('https://dfsgrasrot.frivis.com/organizations/loerenskog-skytterlag?fbclid=IwY2xjawMH3KpleHRuA2FlbQIxMABicmlkETBxRzM3dVhFVjQ1SHdadWd2AR5N2yhQo49RToH27R57ngZrd2xsH68Xq_XZ5K9-LRTQwaZnS89uZoLHSIiKHg_aem_T61BIyKkK_7K0_5AfVK2Dw', '_blank');
+    }
+}
+
 // Test loading overlay on page load
 document.addEventListener('DOMContentLoaded', function() {
     const loadingOverlay = document.getElementById('importLoadingOverlay');
@@ -241,6 +255,10 @@ async function loadData() {
                 migrateLedigToUavklart();
                 console.log('loadData: Loaded existing data from database:', data.length, 'activities');
                 console.log('loadData: First activity sample:', data[0]);
+                // Log source information
+                const importedCount = data.filter(a => a.source === 'imported').length;
+                const manualCount = data.filter(a => a.source === 'manual').length;
+                console.log(`loadData: Source breakdown - Imported: ${importedCount}, Manual: ${manualCount}`);
             } else {
                 // No data in database - start with empty array
                 openingHours = [];
@@ -525,6 +543,11 @@ function createListItem(item) {
         </div>
     ` : '';
     
+    // Add source indicator
+    const sourceIndicator = item.source === 'imported' ? 
+        '<i class="fas fa-download" title="Importert fra kalender" style="color: #6c757d; margin-right: 5px; font-size: 0.8em;"></i>' : 
+        '<i class="fas fa-edit" title="Manuelt opprettet" style="color: #28a745; margin-right: 5px; font-size: 0.8em;"></i>';
+    
     // Create a safe CSS class name (replace spaces and special chars)
     const primaryActivity = item.activities[0] || 'Annet';
     const safeClass = primaryActivity.replace(/[^a-zA-Z0-9]/g, '-');
@@ -534,7 +557,7 @@ function createListItem(item) {
             ${adminButtons}
             <div class="item-content">
                 <div class="item-header">
-                    <div class="item-date">${formattedDate} (${item.dayOfWeek})</div>
+                    <div class="item-date">${sourceIndicator}${formattedDate} (${item.dayOfWeek})</div>
                     <div class="item-time">${item.startTime} - ${item.endTime}</div>
                 </div>
                 <div class="item-activity">
@@ -1462,6 +1485,29 @@ function updateActivityCounter() {
         mainCounter.textContent = count;
     }
     
+    // Show breakdown of imported vs manual events in admin panel
+    if (openingHours && openingHours.length > 0) {
+        const importedCount = openingHours.filter(a => a.source === 'imported').length;
+        const manualCount = openingHours.filter(a => a.source === 'manual').length;
+        
+        const adminHeader = document.querySelector('.admin-header');
+        if (adminHeader) {
+            const existingBreakdown = adminHeader.querySelector('.activity-breakdown');
+            if (existingBreakdown) {
+                existingBreakdown.remove();
+            }
+            
+            const breakdown = document.createElement('div');
+            breakdown.className = 'activity-breakdown';
+            breakdown.style.cssText = 'font-size: 0.8rem; color: #6c757d; margin-top: 0.5rem;';
+            breakdown.innerHTML = `
+                <div><i class="fas fa-download" style="color: #6c757d;"></i> Importert: ${importedCount}</div>
+                <div><i class="fas fa-edit" style="color: #28a745;"></i> Manuelt: ${manualCount}</div>
+            `;
+            adminHeader.appendChild(breakdown);
+        }
+    }
+    
     // Show/hide empty database message in import panel
     const emptyMessage = document.getElementById('emptyDatabaseMessage');
     if (emptyMessage) {
@@ -1540,7 +1586,8 @@ async function addNewOpening(e) {
             activities: selectedActivities,
             colors: selectedColors,
             comment: comment,
-            rangeOfficer: rangeOfficer
+            rangeOfficer: rangeOfficer,
+            source: 'manual' // Mark as manually edited
         };
         
         try {
@@ -1589,7 +1636,8 @@ async function addNewOpening(e) {
             activities: selectedActivities,
             colors: selectedColors,
             comment: comment,
-            rangeOfficer: rangeOfficer
+            rangeOfficer: rangeOfficer,
+            source: 'manual' // Mark as manually created
         };
         
         try {
