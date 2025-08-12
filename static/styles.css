@@ -244,6 +244,24 @@ body {
     font-weight: bold;
 }
 
+/* Weather button styling */
+#weatherBtn {
+    background: #f39c12; /* Orange color for weather */
+    color: white;
+    border: none;
+}
+
+#weatherBtn:hover {
+    background: #e67e22; /* Darker orange on hover */
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(243, 156, 18, 0.3);
+}
+
+#weatherBtn i {
+    color: white;
+    font-weight: bold;
+}
+
 
 .btn-close {
     background: none;

@@ -22,6 +22,13 @@ function openWebsite() {
     }
 }
 
+// Weather function
+function openWeather() {
+    if (confirm('Vil du åpne værvarsel for Lørenskog Skytterlag?')) {
+        window.open('https://www.yr.no/nb/værvarsel/timetabell/59.891,%2010.970/?i=0', '_blank');
+    }
+}
+
 // Test loading overlay on page load
 document.addEventListener('DOMContentLoaded', function() {
     const loadingOverlay = document.getElementById('importLoadingOverlay');
