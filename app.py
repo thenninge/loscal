@@ -419,7 +419,7 @@ def get_activities():
                         'colors': colors_data,
                         'comment': row[8],
                         'rangeOfficer': row[9],
-                        'source': row[12] if len(row) > 12 else 'manual'
+                        'source': row[10] if len(row) > 10 else 'manual'
                     })
                 except Exception as e:
                     print(f"Error processing SQLite row {row[0]}: {str(e)}")
