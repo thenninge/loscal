@@ -545,12 +545,12 @@ function createListItem(item) {
     
     // Source indicator removed - TODO: Manual-imported ikon-debug
     
-    // Create a safe CSS class name (replace spaces and special chars)
-    const primaryActivity = item.activities[0] || 'Annet';
-    const safeClass = primaryActivity.replace(/[^a-zA-Z0-9]/g, '-');
+    // Get colors for border - use first color or fallback to gray
+    const colors = Array.isArray(item.colors) ? item.colors : [item.colors];
+    const borderColor = colors.length > 0 ? colors[0] : '#6B7280';
     
     return `
-        <div class="list-item ${safeClass}" data-id="${item.id}">
+        <div class="list-item" data-id="${item.id}" style="border-left-color: ${borderColor};">
             ${adminButtons}
             <div class="item-content">
                 <div class="item-header">

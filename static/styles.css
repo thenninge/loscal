@@ -515,19 +515,7 @@ body {
     color: #dc2626;
 }
 
-.list-item.Jeger { border-left-color: #228B22; }
-.list-item.DFS { border-left-color: #8B4513; }
-.list-item.Pistol { border-left-color: #F59E0B; }
-.list-item.PRS { border-left-color: #8B5CF6; }
-.list-item.Leirdue { border-left-color: #EC4899; }
-.list-item.Storviltprøve { border-left-color: #3B82F6; }
-.list-item.Uavklart { border-left-color: #EF4444; }
-
-.list-item.Åpen-for-alle { border-left-color: #98FB98; }
-
-.list-item.Annet { border-left-color: #6B7280; }
-.list-item[class*="100m"] { border-left-color: #87CEEB; }
-.list-item[class*="200m"] { border-left-color: #4ECDC4; }
+/* Border colors now set dynamically via JavaScript based on item.colors */
 
 .item-content {
     width: 100%;
