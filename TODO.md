@@ -2,7 +2,24 @@
 
 ## 🚀 Fremtidige Forbedringer
 
-### 1. **Duplikatprioritering: Manuell vs Importert**
+### 1. **Manual-imported ikon-debug**
+**Prioritet:** Høy  
+**Beskrivelse:** Debug og fiks visning av ikoner for manuelt opprettede vs importerte aktiviteter
+
+#### Problem:
+- Alle aktiviteter viser "Manuell" (grønt edit-ikon) selv etter import
+- Ikonene fungerer på localhost men ikke på Vercel deployment
+- Mulig kolonne-indeks problem mellom SQLite og PostgreSQL
+
+#### Debugging:
+- [ ] Sjekk database schema forskjeller
+- [ ] Verifiser kolonne-indekser for `source` felt
+- [ ] Test import-logikk på både localhost og Vercel
+- [ ] Sjekk om `data.get('source', 'manual')` fallback overskriver riktig verdi
+
+---
+
+### 2. **Duplikatprioritering: Manuell vs Importert**
 **Prioritet:** Medium  
 **Beskrivelse:** Implementer logikk for å prioritere manuelt opprettede aktiviteter over importerte ved duplikat-håndtering
 

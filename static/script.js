@@ -543,10 +543,7 @@ function createListItem(item) {
         </div>
     ` : '';
     
-    // Add source indicator
-    const sourceIndicator = item.source === 'imported' ? 
-        '<i class="fas fa-download" title="Importert fra kalender" style="color: #6c757d; margin-right: 5px; font-size: 0.8em;"></i>' : 
-        '<i class="fas fa-edit" title="Manuelt opprettet" style="color: #28a745; margin-right: 5px; font-size: 0.8em;"></i>';
+    // Source indicator removed - TODO: Manual-imported ikon-debug
     
     // Create a safe CSS class name (replace spaces and special chars)
     const primaryActivity = item.activities[0] || 'Annet';
@@ -557,7 +554,7 @@ function createListItem(item) {
             ${adminButtons}
             <div class="item-content">
                 <div class="item-header">
-                    <div class="item-date">${sourceIndicator}${formattedDate} (${item.dayOfWeek})</div>
+                    <div class="item-date">${formattedDate} (${item.dayOfWeek})</div>
                     <div class="item-time">${item.startTime} - ${item.endTime}</div>
                 </div>
                 <div class="item-activity">
