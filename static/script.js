@@ -1487,24 +1487,12 @@ function updateActivityCounter() {
     
     // Show breakdown of imported vs manual events in admin panel
     if (openingHours && openingHours.length > 0) {
-        const importedCount = openingHours.filter(a => a.source === 'imported').length;
-        const manualCount = openingHours.filter(a => a.source === 'manual').length;
-        
         const adminHeader = document.querySelector('.admin-header');
         if (adminHeader) {
             const existingBreakdown = adminHeader.querySelector('.activity-breakdown');
             if (existingBreakdown) {
                 existingBreakdown.remove();
             }
-            
-            const breakdown = document.createElement('div');
-            breakdown.className = 'activity-breakdown';
-            breakdown.style.cssText = 'font-size: 0.8rem; color: #6c757d; margin-top: 0.5rem;';
-            breakdown.innerHTML = `
-                <div><i class="fas fa-download" style="color: #6c757d;"></i> Importert: ${importedCount}</div>
-                <div><i class="fas fa-edit" style="color: #28a745;"></i> Manuelt: ${manualCount}</div>
-            `;
-            adminHeader.appendChild(breakdown);
         }
     }
     
