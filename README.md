@@ -1,6 +1,16 @@
-# Skytebane Kalender
+# Losby Skytterlag Åpningstider
 
-En enkel og oversiktlig webapp for å vise åpningstider på en skytebane.
+En moderne webapp for å vise åpningstider på Lørenskog Skytterlag med Flask backend og iCal import.
+
+## Funksjoner
+
+- **Liste-visning**: Oversiktlig liste med alle åpningstider
+- **Kalender-visning**: Tile view med klikkbare dager
+- **Filtrering**: Filtrer på aktivitetstype (Jeger, DFS, Pistol, etc.)
+- **Admin-panel**: Legg til nye åpningstider med PIN-kode beskyttelse
+- **iCal Import**: Automatisk import fra Google Calendar
+- **Responsivt design**: Fungerer på PC, tablet og mobil
+- **Dynamiske farger**: Kant-farger som samsvarer med aktivitetsfarger
 
 ## Funksjoner
 
@@ -12,33 +22,49 @@ En enkel og oversiktlig webapp for å vise åpningstider på en skytebane.
 
 ## Aktivitetstyper
 
-- 🎯 **Jaktskyting** (Blå)
-- 🎯 **DFS** (Grønn)
+- 🎯 **Jeger** (Grønn)
+- 🎯 **DFS** (Brun)
 - 🎯 **Pistol** (Gul)
-- 🎯 **Oppskyting** (Rød)
-- 🎯 **Stevne** (Lilla)
+- 🎯 **PRS** (Lilla)
+- 🎯 **Leirdue** (Rosa)
+- 🎯 **Storviltprøve** (Blå)
+- 🎯 **Uavklart** (Rød)
+- 🎯 **Åpen for alle** (Lys grønn)
 - 🎯 **Annet** (Grå)
+- 🎯 **100m** (Lys blå)
+- 🎯 **200m** (Turkis)
 
 ## Kom i gang
 
-1. Åpne `index.html` i en nettleser
-2. Appen starter automatisk med liste-visning
-3. Bruk knappene øverst for å bytte mellom liste og kalender
-4. Klikk på tannhjul-ikonet for admin-panel
+### Lokal utvikling
+1. Installer Python-avhengigheter: `pip install -r requirements.txt`
+2. Start Flask-serveren: `python app.py`
+3. Åpne `http://localhost:5000` i en nettleser
+4. Appen starter automatisk med liste-visning
+5. Bruk knappene øverst for å bytte mellom liste og kalender
+6. Klikk på tannhjul-ikonet for admin-panel
+
+### Produksjon
+Appen er deployet på Vercel og tilgjengelig på: [https://loscal.vercel.app](https://loscal.vercel.app)
 
 ## Admin-funksjoner
 
-- **Standard PIN-kode**: `1234`
+- **Standard PIN-kode**: `0406` og `0808`
 - Legg til nye åpningstider
-- Alle data lagres lokalt i nettleseren
-- PIN-kode kan endres i koden
+- Rediger eksisterende aktiviteter
+- Slett aktiviteter
+- Import fra Google Calendar (iCal)
+- Statistikk over aktiviteter
+- Data lagres i SQLite/PostgreSQL database
 
 ## Teknisk informasjon
 
-- **Teknologi**: Vanilla HTML, CSS, JavaScript
-- **Lagring**: LocalStorage (enkel database-port)
+- **Backend**: Flask (Python)
+- **Frontend**: HTML, CSS, JavaScript
+- **Database**: SQLite (lokalt) / PostgreSQL (Vercel)
+- **Import**: iCal fra Google Calendar
+- **Deployment**: Vercel
 - **Responsivt**: CSS Grid og Flexbox
-- **Ingen avhengigheter**: Fungerer overalt
 
 ## Database-port
 
@@ -82,29 +108,13 @@ For fremtidig implementering av scraping fra eksterne kalendere:
 3. Lag API-endepunkter for å importere data
 4. Oppdater frontend for å håndtere import
 
+## Bra deploys
+
+### 777378d
+Fix filter sync between views: Add filterData() call in toggleView() to ensure filters are applied when switching between list and calendar views.
+
 ## Lisens
 
 Fritt tilgjengelig for bruk og modifikasjon. 
-### v1.1-admin-mode-klikkbare-aktiviteter (2025-08-07-2328)
-**Status**: 🔄 Under utvikling
 
-**Endringer:**
-- 🔄 admin-mode-klikkbare-aktiviteter
-
-**Filer:**
-- `v1.1-admin-mode-klikkbare-aktiviteter.html`
-- `v1.1-admin-mode-klikkbare-aktiviteter.css`
-- `v1.1-admin-mode-klikkbare-aktiviteter.js`
-
-
-### v1.1-perfekt-version-med-alle-funksjoner (2025-08-07-2343)
-**Status**: 🔄 Under utvikling
-
-**Endringer:**
-- 🔄 perfekt-version-med-alle-funksjoner
-
-**Filer:**
-- `v1.1-perfekt-version-med-alle-funksjoner.html`
-- `v1.1-perfekt-version-med-alle-funksjoner.css`
-- `v1.1-perfekt-version-med-alle-funksjoner.js`
 
