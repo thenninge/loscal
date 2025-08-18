@@ -531,13 +531,35 @@ function createListItem(item) {
         month: '2-digit',
         year: '2-digit'
     });
-    
-    const activityBadges = item.activities.map((activity, index) => {
-        // Handle both string and array colors
-        const color = Array.isArray(item.colors) ? item.colors[index] : item.colors;
+
+    // Hent aktive filtre
+    const activeFilters = Array.from(document.querySelectorAll('.filter-item input:checked'))
+        .map(checkbox => checkbox.value);
+
+    // Filtrer aktiviteter basert på aktive filtre
+    let filteredActivities = item.activities;
+    let filteredColors = item.colors;
+    if (activeFilters.length > 0) {
+        filteredActivities = [];
+        filteredColors = [];
+        item.activities.forEach((activity, index) => {
+            if (activeFilters.includes(activity)) {
+                filteredActivities.push(activity);
+                filteredColors.push(Array.isArray(item.colors) ? item.colors[index] : item.colors);
+            }
+        });
+    }
+    // Hvis ingen aktiviteter matcher filteret, vis alle (fallback)
+    if (filteredActivities.length === 0) {
+        filteredActivities = item.activities;
+        filteredColors = item.colors;
+    }
+
+    const activityBadges = filteredActivities.map((activity, index) => {
+        const color = Array.isArray(filteredColors) ? filteredColors[index] : filteredColors;
         return `<span class="activity-badge ${activity}" style="background-color: ${color}">${activity}</span>`;
     }).join('');
-    
+
     // Only show admin buttons in admin mode
     const adminButtons = adminMode ? `
         <div class="admin-buttons">
@@ -549,13 +571,11 @@ function createListItem(item) {
             </button>
         </div>
     ` : '';
-    
-    // Source indicator removed - TODO: Manual-imported ikon-debug
-    
+
     // Get colors for border - use first color or fallback to gray
     const colors = Array.isArray(item.colors) ? item.colors : [item.colors];
     const borderColor = colors.length > 0 ? colors[0] : '#6B7280';
-    
+
     return `
         <div class="list-item" data-id="${item.id}" style="border-left-color: ${borderColor};">
             ${adminButtons}
