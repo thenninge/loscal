@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lokal Værmelding - Lørenskog Skytterlag</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .weather-section {
+            margin-bottom: 20px;
+        }
+        .weather-section h2 {
+            font-size: 14px;
+            margin-bottom: 4px;
+            color: #666;
+            font-weight: normal;
+        }
+        .weather-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .weather-table th {
+            text-align: left;
+            padding: 8px 6px;
+            background: #f8f9fa;
+            color: #333;
+            font-weight: 600;
+            font-size: 12px;
+        }
+        .weather-table th:nth-child(3) {
+            text-align: right;
+        }
+        .weather-table td {
+            padding: 6px;
+            border-bottom: 1px solid #eee;
+            font-size: 12px;
+        }
+        .weather-table td:nth-child(3) {
+            text-align: right;
+        }
+        .weather-table td:nth-child(4) {
+            text-align: left;
+        }
+        .weather-table tr:hover {
+            background: #f8f9fa;
+        }
+        .wind-arrow {
+            display: inline-block;
+            margin-right: 4px;
+        }
+        .expand-button {
+            padding: 6px 14px;
+            font-size: 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-bottom: 8px;
+            background: #FFA500;
+            color: white;
+            border: none;
+        }
+        .expand-button:hover {
+            background: #e69500;
+        }
+        .loading {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            padding: 20px;
+        }
+        .error {
+            color: #dc3545;
+            text-align: center;
+            font-style: italic;
+            padding: 20px;
+        }
+        .weather-icon {
+            font-size: 1.2em;
+        }
+        .preset-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .preset-btn {
+            padding: 8px 16px;
+            background: #FFA500;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .preset-btn:hover {
+            background: #e69500;
+        }
+        .preset-btn.active {
+            background: #e69500;
+            font-weight: bold;
+        }
+        .custom-dialog {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+        .custom-dialog.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .custom-dialog-content {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            min-width: 300px;
+        }
+        .custom-dialog h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .custom-dialog input {
+            width: 100%;
+            padding: 8px;
+            margin: 8px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .custom-dialog-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .custom-dialog-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .custom-dialog-btn.primary {
+            background: #FFA500;
+            color: white;
+        }
+        .custom-dialog-btn.secondary {
+            background: #6c757d;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <!-- Header -->
+        <header class="header">
+            <h1>
+                <img src="{{ url_for('static', filename='logo.png') }}" alt="Lørenskog Skytterlag Logo" class="header-logo">
+                <span>Lokal Værmelding</span>
+            </h1>
+            <div class="header-controls">
+                <button id="backBtn" class="btn btn-secondary" title="Tilbake til hovedsiden" onclick="window.location.href='/'">
+                    <i class="fas fa-arrow-left"></i> Tilbake
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="weather-container">
+                <h2><i class="fas fa-map-marker-alt"></i> Værmelding for Lørenskog Skytterlag</h2>
+                
+                <!-- Preset Buttons -->
+                <div class="preset-buttons">
+                    <button class="preset-btn active" onclick="setTimePeriod('now')">Neste 5 timer</button>
+                    <button class="preset-btn" onclick="setTimePeriod('tomorrow-morning')">I morgen 10-15</button>
+                    <button class="preset-btn" onclick="setTimePeriod('tomorrow-afternoon')">I morgen 16-21</button>
+                    <button class="preset-btn" onclick="showCustomDialog()">Egendefinert periode</button>
+                </div>
+                
+                <!-- Standplass -->
+                <div class="weather-section" id="weather-standplass">
+                    <h2>Værmelding (Standplass)</h2>
+                    <div class="loading">Laster værmelding...</div>
+                </div>
+
+                <!-- 200m -->
+                <div class="weather-section" id="weather-200m">
+                    <h2>Værmelding (200m)</h2>
+                    <div class="loading">Laster værmelding...</div>
+                </div>
+
+                <!-- 400m -->
+                <div class="weather-section" id="weather-400m">
+                    <h2>Værmelding (400m)</h2>
+                    <div class="loading">Laster værmelding...</div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Custom Time Dialog -->
+    <div class="custom-dialog" id="customDialog">
+        <div class="custom-dialog-content">
+            <h3>Egendefinert tidsperiode</h3>
+            <label>Start tid:</label>
+            <input type="datetime-local" id="startTime">
+            <label>Slutt tid:</label>
+            <input type="datetime-local" id="endTime">
+            <div class="custom-dialog-buttons">
+                <button class="custom-dialog-btn primary" onclick="setCustomTimePeriod()">OK</button>
+                <button class="custom-dialog-btn secondary" onclick="hideCustomDialog()">Avbryt</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script>
+        // Værmelding posisjoner
+        const weatherPositions = {
+            '400m': { lat: 59.88915033599055, lon: 10.966211684095603 },
+            '200m': { lat: 59.89053674227015, lon: 10.968735389001138 },
+            'standplass': { lat: 59.89171431835379, lon: 10.971989146363413 }
+        };
+
+        // OpenMeteo API (gratis, ingen API-nøkkel nødvendig)
+        const API_BASE_URL = 'https://api.open-meteo.com/v1/forecast';
+
+        // Aktuell tidsperiode
+        let currentTimePeriod = {
+            start: new Date(),
+            end: new Date(Date.now() + 5 * 60 * 60 * 1000), // 5 timer fra nå
+            label: 'Neste 5 timer'
+        };
+
+        // Vindretning tekst
+        function windDirectionText(deg) {
+            const directions = ['N', 'NØ', 'Ø', 'SØ', 'S', 'SV', 'V', 'NV'];
+            const index = Math.round(deg / 45) % 8;
+            return directions[index];
+        }
+
+        // Vindpil
+        function windArrow(deg) {
+            return `<span class="wind-arrow" style="transform: rotate(${deg}deg);">↑</span>`;
+        }
+
+        // Værikon basert på WMO kode
+        function weatherIcon(code) {
+            const icons = {
+                0: '☀️', // Klar himmel
+                1: '🌤️', // Hovedsakelig klar
+                2: '⛅', // Delvis skyet
+                3: '☁️', // Overskyet
+                45: '🌫️', // Tåke
+                48: '🌫️', // Tåke med rim
+                51: '🌧️', // Lett regn
+                53: '🌧️', // Moderat regn
+                55: '🌧️', // Kraftig regn
+                61: '🌧️', // Lett regn
+                63: '🌧️', // Moderat regn
+                65: '🌧️', // Kraftig regn
+                71: '🌨️', // Lett snø
+                73: '🌨️', // Moderat snø
+                75: '🌨️', // Kraftig snø
+                95: '⛈️', // Torden
+                96: '⛈️', // Torden med lett hagl
+                99: '⛈️'  // Torden med kraftig hagl
+            };
+            return icons[code] || '🌤️';
+        }
+
+        // Sett tidsperiode
+        function setTimePeriod(period) {
+            const now = new Date();
+            const tomorrow = new Date(now);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+
+            switch(period) {
+                case 'now':
+                    currentTimePeriod = {
+                        start: now,
+                        end: new Date(now.getTime() + 5 * 60 * 60 * 1000),
+                        label: 'Neste 5 timer'
+                    };
+                    break;
+                case 'tomorrow-morning':
+                    const morningStart = new Date(tomorrow);
+                    morningStart.setHours(10, 0, 0, 0);
+                    const morningEnd = new Date(tomorrow);
+                    morningEnd.setHours(15, 0, 0, 0);
+                    currentTimePeriod = {
+                        start: morningStart,
+                        end: morningEnd,
+                        label: 'I morgen 10-15'
+                    };
+                    break;
+                case 'tomorrow-afternoon':
+                    const afternoonStart = new Date(tomorrow);
+                    afternoonStart.setHours(16, 0, 0, 0);
+                    const afternoonEnd = new Date(tomorrow);
+                    afternoonEnd.setHours(21, 0, 0, 0);
+                    currentTimePeriod = {
+                        start: afternoonStart,
+                        end: afternoonEnd,
+                        label: 'I morgen 16-21'
+                    };
+                    break;
+            }
+
+            // Oppdater aktive knapp
+            document.querySelectorAll('.preset-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            // Last værmelding på nytt
+            loadAllWeather();
+        }
+
+        // Vis custom dialog
+        function showCustomDialog() {
+            const dialog = document.getElementById('customDialog');
+            dialog.classList.add('active');
+            
+            // Sett default verdier
+            const now = new Date();
+            const startTime = new Date(now.getTime() + 60 * 60 * 1000); // 1 time fra nå
+            const endTime = new Date(now.getTime() + 6 * 60 * 60 * 1000); // 6 timer fra nå
+            
+            document.getElementById('startTime').value = startTime.toISOString().slice(0, 16);
+            document.getElementById('endTime').value = endTime.toISOString().slice(0, 16);
+        }
+
+        // Skjul custom dialog
+        function hideCustomDialog() {
+            document.getElementById('customDialog').classList.remove('active');
+        }
+
+        // Sett custom tidsperiode
+        function setCustomTimePeriod() {
+            const startTime = new Date(document.getElementById('startTime').value);
+            const endTime = new Date(document.getElementById('endTime').value);
+            
+            if (startTime >= endTime) {
+                alert('Starttid må være før sluttid!');
+                return;
+            }
+            
+            currentTimePeriod = {
+                start: startTime,
+                end: endTime,
+                label: `${startTime.toLocaleDateString('no-NO')} ${startTime.toLocaleTimeString('no-NO', {hour: '2-digit', minute: '2-digit'})} - ${endTime.toLocaleTimeString('no-NO', {hour: '2-digit', minute: '2-digit'})}`
+            };
+            
+            hideCustomDialog();
+            loadAllWeather();
+        }
+
+        // Hent værmelding for en posisjon
+        async function fetchWeather(lat, lon, positionId) {
+            try {
+                const url = `${API_BASE_URL}?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,wind_speed_10m,wind_direction_10m,weather_code,precipitation&timezone=Europe/Oslo`;
+                
+                const response = await fetch(url);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                updateWeatherSection(positionId, data);
+            } catch (error) {
+                console.error(`Error fetching weather for ${positionId}:`, error);
+                showError(positionId, error.message);
+            }
+        }
+
+        // Oppdater værmelding-seksjon
+        function updateWeatherSection(positionId, data) {
+            const section = document.getElementById(`weather-${positionId}`);
+            if (!section) return;
+
+            // Hent data for valgt tidsperiode
+            const hourlyData = [];
+            const startTime = currentTimePeriod.start;
+            const endTime = currentTimePeriod.end;
+            
+            for (let time = new Date(startTime); time <= endTime; time.setHours(time.getHours() + 1)) {
+                const timeString = time.toISOString().slice(0, 13) + ':00';
+                const index = data.hourly.time.indexOf(timeString);
+                
+                if (index !== -1) {
+                    hourlyData.push({
+                        time: timeString,
+                        temp: Math.round(data.hourly.temperature_2m[index]),
+                        windSpeed: Math.round(data.hourly.wind_speed_10m[index] / 3.6), // Konverterer fra km/h til m/s
+                        windDir: data.hourly.wind_direction_10m[index],
+                        weatherCode: data.hourly.weather_code[index],
+                        precipitation: data.hourly.precipitation[index]
+                    });
+                }
+            }
+
+            if (hourlyData.length === 0) {
+                section.innerHTML = `
+                    <h2>Værmelding (${positionId.toUpperCase()}) - ${currentTimePeriod.label}</h2>
+                    <div class="error">Ingen data tilgjengelig for valgt tidsperiode</div>
+                `;
+                return;
+            }
+
+            // Opprett tabell
+            const tableHTML = `
+                <table class="weather-table">
+                    <thead>
+                        <tr>
+                            <th>Tid</th>
+                            <th>Temp</th>
+                            <th>Vind (m/s)</th>
+                            <th>Retning</th>
+                            <th>Vær</th>
+                            <th>Nedbør (mm)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${hourlyData.map(h => `
+                            <tr>
+                                <td>${new Date(h.time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false })}</td>
+                                <td>${h.temp}°C</td>
+                                <td>${h.windSpeed}</td>
+                                <td>
+                                    ${windArrow(h.windDir)}
+                                    ${windDirectionText(h.windDir)}
+                                </td>
+                                <td class="weather-icon">${weatherIcon(h.weatherCode)}</td>
+                                <td>${h.precipitation}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+
+            section.innerHTML = `
+                <h2>Værmelding (${positionId.toUpperCase()}) - ${currentTimePeriod.label}</h2>
+                ${tableHTML}
+            `;
+        }
+
+        // Vis feilmelding
+        function showError(positionId, message) {
+            const section = document.getElementById(`weather-${positionId}`);
+            if (!section) return;
+            
+            section.innerHTML = `
+                <h2>Værmelding (${positionId.toUpperCase()}) - ${currentTimePeriod.label}</h2>
+                <div class="error">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <p>Kunne ikke laste værmelding</p>
+                    <small>${message}</small>
+                </div>
+            `;
+        }
+
+        // Last alle værmeldinger
+        async function loadAllWeather() {
+            console.log('Laster værmelding for alle posisjoner...');
+            
+            // Hent værmelding for hver posisjon
+            for (const [positionId, coords] of Object.entries(weatherPositions)) {
+                await fetchWeather(coords.lat, coords.lon, positionId);
+            }
+        }
+
+        // Last værmelding når siden lastes
+        document.addEventListener('DOMContentLoaded', loadAllWeather);
+
+        // Lukk dialog når man klikker utenfor
+        document.getElementById('customDialog').addEventListener('click', function(e) {
+            if (e.target === this) {
+                hideCustomDialog();
+            }
+        });
+    </script>
+</body>
+</html>

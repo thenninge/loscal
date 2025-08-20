@@ -29,6 +29,11 @@ function openWeather() {
     }
 }
 
+// Local weather function
+function openLocalWeather() {
+    window.location.href = '/localweather';
+}
+
 // Test loading overlay on page load
 document.addEventListener('DOMContentLoaded', function() {
     const loadingOverlay = document.getElementById('importLoadingOverlay');

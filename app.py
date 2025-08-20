@@ -169,6 +169,10 @@ init_db()
 def index():
     return render_template('index.html')
 
+@app.route('/localweather')
+def localweather():
+    return render_template('localweather.html')
+
 @app.route('/debug/static')
 def debug_static():
     import os
