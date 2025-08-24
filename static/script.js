@@ -539,21 +539,22 @@ function createListItem(item) {
 
     // Hent aktive filtre
     const activeFilters = Array.from(document.querySelectorAll('.filter-item input:checked'))
-        .map(checkbox => checkbox.value);
+        .map(checkbox => checkbox.value)
+        .filter(filter => filter !== 'Utelat udefinert'); // Exclude this filter from activity display
 
-    // Filtrer aktiviteter basert på aktive filtre
-    let filteredActivities = item.activities;
-    let filteredColors = item.colors;
-    if (activeFilters.length > 0) {
-        filteredActivities = [];
-        filteredColors = [];
-        item.activities.forEach((activity, index) => {
-            if (activeFilters.includes(activity)) {
-                filteredActivities.push(activity);
-                filteredColors.push(Array.isArray(item.colors) ? item.colors[index] : item.colors);
-            }
-        });
-    }
+    // Filtrer aktiviteter basert på aktive filtre + alltid inkluder "Uavklart"
+    let filteredActivities = [];
+    let filteredColors = [];
+    
+    item.activities.forEach((activity, index) => {
+        const color = Array.isArray(item.colors) ? item.colors[index] : item.colors;
+        // Vis aktivitet hvis den er valgt i filteret ELLER hvis det er "Uavklart"
+        if (activeFilters.length === 0 || activeFilters.includes(activity) || activity === 'Uavklart') {
+            filteredActivities.push(activity);
+            filteredColors.push(color);
+        }
+    });
+    
     // Hvis ingen aktiviteter matcher filteret, vis alle (fallback)
     if (filteredActivities.length === 0) {
         filteredActivities = item.activities;
