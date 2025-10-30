@@ -76,14 +76,27 @@ async function updateNextSevenDays() {
         const importResult = await importResponse.json();
         console.log('Import result:', importResult);
         
-        // Step 2: Check for duplicates
+        // Step 2: Check for duplicates and remove them automatically
+        let duplicatesRemoved = 0;
         const duplicateResponse = await fetch('/api/duplicates');
         if (duplicateResponse.ok) {
             const duplicateData = await duplicateResponse.json();
             console.log('Duplicates found:', duplicateData.duplicates);
             
             if (duplicateData.duplicates && duplicateData.duplicates.length > 0) {
-                console.log(`${duplicateData.duplicates.length} duplikater funnet`);
+                duplicatesRemoved = duplicateData.duplicates.length;
+                console.log(`${duplicatesRemoved} duplikater funnet - fjerner automatisk...`);
+                
+                // Automatically remove duplicates
+                const removeResponse = await fetch('/api/duplicates', {
+                    method: 'DELETE'
+                });
+                
+                if (removeResponse.ok) {
+                    console.log('Duplikater fjernet automatisk');
+                } else {
+                    console.error('Feil ved fjerning av duplikater');
+                }
             }
         }
         
@@ -102,7 +115,12 @@ async function updateNextSevenDays() {
             button.disabled = false;
         }, 2000);
         
-        alert(`Oppdatering fullført!\n\n${importResult.imported_count} aktiviteter importert/oppdatert fra Lorenskog Skytterlag kalender.`);
+        // Build success message
+        let successMessage = `Oppdatering fullført!\n\n${importResult.imported_count} aktiviteter importert/oppdatert fra Lorenskog Skytterlag kalender.`;
+        if (duplicatesRemoved > 0) {
+            successMessage += `\n\n${duplicatesRemoved} duplikat(er) fjernet automatisk.`;
+        }
+        alert(successMessage);
         
     } catch (error) {
         console.error('Error updating next 7 days:', error);
