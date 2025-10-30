@@ -34,6 +34,93 @@ function openLocalWeather() {
     window.location.href = '/localweather';
 }
 
+// Update next 7 days function
+async function updateNextSevenDays() {
+    const button = document.getElementById('updateSevenDaysBtn');
+    const originalText = button.innerHTML;
+    const icon = button.querySelector('i');
+    
+    try {
+        // Disable button and show loading state
+        button.disabled = true;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Oppdaterer...';
+        
+        // Calculate dates for next 7 days
+        const today = new Date();
+        const nextWeek = new Date(today);
+        nextWeek.setDate(today.getDate() + 7);
+        
+        const fromDate = today.toISOString().split('T')[0];
+        const toDate = nextWeek.toISOString().split('T')[0];
+        
+        console.log('Updating next 7 days:', fromDate, 'to', toDate);
+        
+        // Step 1: Import calendar data
+        const importResponse = await fetch('/api/import/calendar', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                from_date: fromDate,
+                to_date: toDate,
+                auto_categorize: true
+            })
+        });
+        
+        if (!importResponse.ok) {
+            const errorData = await importResponse.json().catch(() => ({ error: 'Ukjent feil' }));
+            throw new Error(errorData.error || 'Feil ved import av kalender');
+        }
+        
+        const importResult = await importResponse.json();
+        console.log('Import result:', importResult);
+        
+        // Step 2: Check for duplicates
+        const duplicateResponse = await fetch('/api/duplicates');
+        if (duplicateResponse.ok) {
+            const duplicateData = await duplicateResponse.json();
+            console.log('Duplicates found:', duplicateData.duplicates);
+            
+            if (duplicateData.duplicates && duplicateData.duplicates.length > 0) {
+                console.log(`${duplicateData.duplicates.length} duplikater funnet`);
+            }
+        }
+        
+        // Step 3: Reload data and refresh views
+        await loadData();
+        renderList();
+        renderCalendar();
+        
+        // Show success message
+        button.innerHTML = '<i class="fas fa-check"></i> Oppdatert!';
+        button.style.backgroundColor = '#28a745';
+        
+        setTimeout(() => {
+            button.innerHTML = originalText;
+            button.style.backgroundColor = '';
+            button.disabled = false;
+        }, 2000);
+        
+        alert(`Oppdatering fullført!\n\n${importResult.imported_count} aktiviteter importert/oppdatert fra Lorenskog Skytterlag kalender.`);
+        
+    } catch (error) {
+        console.error('Error updating next 7 days:', error);
+        
+        // Show error state
+        button.innerHTML = '<i class="fas fa-times"></i> Feil';
+        button.style.backgroundColor = '#dc3545';
+        
+        setTimeout(() => {
+            button.innerHTML = originalText;
+            button.style.backgroundColor = '';
+            button.disabled = false;
+        }, 2000);
+        
+        alert(`Feil ved oppdatering: ${error.message}`);
+    }
+}
+
 // Test loading overlay on page load
 document.addEventListener('DOMContentLoaded', function() {
     const loadingOverlay = document.getElementById('importLoadingOverlay');
@@ -321,6 +408,9 @@ async function saveData() {
 function setupEventListeners() {
     // View toggle
     document.getElementById('viewToggle').addEventListener('click', toggleView);
+    
+    // Update seven days button
+    document.getElementById('updateSevenDaysBtn').addEventListener('click', updateNextSevenDays);
     
     // Admin button
     document.getElementById('adminBtn').addEventListener('click', openAdminModal);
