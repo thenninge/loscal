@@ -34,28 +34,29 @@ function openLocalWeather() {
     window.location.href = '/localweather';
 }
 
+function toLocalISODate(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
 // Update next 7 days function
 async function updateNextSevenDays() {
     const button = document.getElementById('updateSevenDaysBtn');
     const originalText = button.innerHTML;
-    const icon = button.querySelector('i');
     
     try {
-        // Disable button and show loading state
         button.disabled = true;
         button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Oppdaterer...';
         
-        // Calculate dates for next 7 days
         const today = new Date();
         const nextWeek = new Date(today);
         nextWeek.setDate(today.getDate() + 7);
         
-        const fromDate = today.toISOString().split('T')[0];
-        const toDate = nextWeek.toISOString().split('T')[0];
+        const fromDate = toLocalISODate(today);
+        const toDate = toLocalISODate(nextWeek);
         
-        console.log('Updating next 7 days:', fromDate, 'to', toDate);
-        
-        // Step 1: Import calendar data
         const importResponse = await fetch('/api/import/calendar', {
             method: 'POST',
             headers: {
@@ -74,38 +75,11 @@ async function updateNextSevenDays() {
         }
         
         const importResult = await importResponse.json();
-        console.log('Import result:', importResult);
         
-        // Step 2: Check for duplicates and remove them automatically
-        let duplicatesRemoved = 0;
-        const duplicateResponse = await fetch('/api/duplicates');
-        if (duplicateResponse.ok) {
-            const duplicateData = await duplicateResponse.json();
-            console.log('Duplicates found:', duplicateData.duplicates);
-            
-            if (duplicateData.duplicates && duplicateData.duplicates.length > 0) {
-                duplicatesRemoved = duplicateData.duplicates.length;
-                console.log(`${duplicatesRemoved} duplikater funnet - fjerner automatisk...`);
-                
-                // Automatically remove duplicates
-                const removeResponse = await fetch('/api/duplicates', {
-                    method: 'DELETE'
-                });
-                
-                if (removeResponse.ok) {
-                    console.log('Duplikater fjernet automatisk');
-                } else {
-                    console.error('Feil ved fjerning av duplikater');
-                }
-            }
-        }
-        
-        // Step 3: Reload data and refresh views
         await loadData();
         renderList();
         renderCalendar();
         
-        // Show success message
         button.innerHTML = '<i class="fas fa-check"></i> Oppdatert!';
         button.style.backgroundColor = '#28a745';
         
@@ -115,17 +89,11 @@ async function updateNextSevenDays() {
             button.disabled = false;
         }, 2000);
         
-        // Build success message
-        let successMessage = `Oppdatering fullført!\n\n${importResult.imported_count} aktiviteter importert/oppdatert fra Lorenskog Skytterlag kalender.`;
-        if (duplicatesRemoved > 0) {
-            successMessage += `\n\n${duplicatesRemoved} duplikat(er) fjernet automatisk.`;
-        }
-        alert(successMessage);
+        alert(`Oppdatering fullført!\n\n${importResult.imported_count} aktiviteter importert/oppdatert fra Lorenskog Skytterlag kalender.`);
         
     } catch (error) {
         console.error('Error updating next 7 days:', error);
         
-        // Show error state
         button.innerHTML = '<i class="fas fa-times"></i> Feil';
         button.style.backgroundColor = '#dc3545';
         
@@ -2097,15 +2065,12 @@ function setupImportDateDefaults() {
         return;
     }
     
-    // Set default from date to today
-    const todayString = today.toISOString().split('T')[0];
+    const todayString = toLocalISODate(today);
     fromDate.value = todayString;
-    console.log('Set fromDate to:', todayString);
     
-    // Set default to date to 7 days from today
     const toDateObj = new Date(today);
     toDateObj.setDate(today.getDate() + 7);
-    const toDateString = toDateObj.toISOString().split('T')[0];
+    const toDateString = toLocalISODate(toDateObj);
     toDate.value = toDateString;
     console.log('Set toDate to:', toDateString);
     

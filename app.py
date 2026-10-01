@@ -2,7 +2,8 @@ from flask import Flask, render_template, request, jsonify, send_from_directory
 import json
 import os
 import re
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 import requests
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -29,6 +30,12 @@ def after_request(response):
 
 # Google Calendar API setup
 SCOPES = ['https://www.googleapis.com/auth/calendar.readonly']
+OSLO_TZ = ZoneInfo('Europe/Oslo')
+SMARTPLAN_ICAL_URL = (
+    'https://lorenskogskytterlag.smartplanapp.io/feeds/calendar/'
+    '17385/2f15b6de06f7807dde12975fc421799bc79b5acc27b6b7a810c4d1fcafb723c1/'
+    '?alarm=false'
+)
 
 # Database setup
 import os
@@ -53,9 +60,7 @@ def get_db_connection():
             user_pass = parts[0].split(':')
             host_port_db = parts[1].split('/')
             host_port = host_port_db[0].split(':')
-            
-            print(f"Connecting to Supabase: {host_port[0]}:{host_port[1]}")
-            
+
             conn = pg8000.Connection(
                 user=user_pass[0],
                 password=user_pass[1],
@@ -63,7 +68,6 @@ def get_db_connection():
                 port=int(host_port[1]),
                 database=host_port_db[1]
             )
-            print("Supabase connection successful")
             return conn
         except Exception as e:
             print(f"Supabase connection error: {str(e)}")
@@ -73,12 +77,9 @@ def get_db_connection():
             return None
     else:
         # Local SQLite database
-        import sqlite3
         try:
-            print("Connecting to local SQLite database")
-            conn = sqlite3.connect('skytebane.db')
-            print("Local SQLite connection successful")
-            return conn
+            import sqlite3
+            return sqlite3.connect('skytebane.db')
         except Exception as e:
             print(f"Local SQLite connection error: {str(e)}")
             return None
@@ -192,8 +193,16 @@ def debug_static():
 @app.route('/debug/ical')
 def debug_ical():
     try:
-        ical_url = "https://calendar.google.com/calendar/ical/2h495fqj8gr9p42361rriptlibc7gf6k%40import.calendar.google.com/public/basic.ics"
-        response = requests.get(ical_url, timeout=10)
+        ical_url = SMARTPLAN_ICAL_URL
+        response = requests.get(
+            ical_url,
+            timeout=15,
+            headers={
+                'User-Agent': 'LosbyKalender/1.0',
+                'Cache-Control': 'no-cache',
+            }
+        )
+        response.encoding = 'utf-8'
         return jsonify({
             'status_code': response.status_code,
             'content_length': len(response.text),
@@ -326,30 +335,14 @@ def static_files(filename):
 @app.route('/api/activities', methods=['GET'])
 def get_activities():
     try:
-        print("Get activities endpoint called")
-        print(f"IS_VERCEL: {IS_VERCEL}")
-        
-        # Ensure database is initialized
-        print("Initializing database...")
-        init_db()
-        print("Database initialization completed")
-        
-        print("Getting database connection...")
         conn = get_db_connection()
         if not conn:
-            print("Database connection failed")
             return jsonify({'success': False, 'error': 'Database connection failed'}), 500
-        print("Database connection successful")
             
         if IS_VERCEL:
-            print("Using PostgreSQL (Vercel)")
-            # pg8000 doesn't have RealDictCursor, use regular cursor
             cursor = conn.cursor()
-            print("Executing SELECT query...")
             cursor.execute('SELECT * FROM activities ORDER BY date, startTime')
-            print("Fetching rows...")
             rows = cursor.fetchall()
-            print(f"Fetched {len(rows)} rows from PostgreSQL")
             
             activities = []
             for row in rows:
@@ -387,13 +380,9 @@ def get_activities():
                     # Skip this row and continue
                     continue
         else:
-            print("Using SQLite (Local)")
             cursor = conn.cursor()
-            print("Executing SELECT query...")
             cursor.execute('SELECT * FROM activities ORDER BY date, startTime')
-            print("Fetching rows...")
             rows = cursor.fetchall()
-            print(f"Fetched {len(rows)} rows from SQLite")
             
             activities = []
             for row in rows:
@@ -432,14 +421,6 @@ def get_activities():
                     continue
         
         conn.close()
-        print(f"Retrieved {len(activities)} activities from database")
-        
-        print(f"Returning {len(activities)} activities from database")
-        
-        # Add debug info about the first activity if any
-        if activities:
-            print(f"First activity sample: {activities[0]}")
-        
         return jsonify(activities)
     except Exception as e:
         print(f"Error getting activities: {str(e)}")
@@ -613,219 +594,139 @@ def import_calendar():
     if request.method == 'OPTIONS':
         return '', 200
     try:
-        print("Import calendar endpoint called")
-        # Get date range and auto-categorize setting from request
-        data = request.get_json()
-        print("Request data:", data)
-        
+        data = request.get_json() or {}
         from_date = data.get('from_date')
         to_date = data.get('to_date')
-        auto_categorize = data.get('auto_categorize', True)  # Default to True for backward compatibility
-        
-        print(f"Date range: {from_date} to {to_date}")
-        print(f"Auto categorize: {auto_categorize}")
-        
+        auto_categorize = data.get('auto_categorize', True)
+
         if not from_date or not to_date:
-            print("Missing date parameters")
             return jsonify({
                 'success': False,
                 'error': 'Fra- og til-dato må være spesifisert'
             }), 400
-        
-        # iCal URL for Lorenskog Skytterlag
-        ical_url = "https://calendar.google.com/calendar/ical/2h495fqj8gr9p42361rriptlibc7gf6k%40import.calendar.google.com/public/basic.ics"
-        
-        print(f"Fetching iCal data from: {ical_url}")
-        
-        # Fetch iCal data
-        response = requests.get(ical_url, timeout=10)
-        print(f"iCal response status: {response.status_code}")
+
+        response = requests.get(
+            SMARTPLAN_ICAL_URL,
+            timeout=15,
+            headers={
+                'User-Agent': 'LosbyKalender/1.0',
+                'Cache-Control': 'no-cache',
+                'Pragma': 'no-cache',
+            }
+        )
         response.raise_for_status()
-        
-        # Parse iCal data
+        response.encoding = 'utf-8'
         ical_data = response.text
-        print(f"iCal data length: {len(ical_data)} characters")
-        
-        # Debug: Search for specific events in raw iCal data
-        print("🔍 Searching for 'Lasse Hansen' in iCal data...")
-        if 'Lasse Hansen' in ical_data:
-            print("✅ Found 'Lasse Hansen' in iCal data")
-            # Find the line containing Lasse Hansen
-            lines = ical_data.split('\n')
-            for i, line in enumerate(lines):
-                if 'Lasse Hansen' in line:
-                    print(f"📅 Line {i}: {line}")
-                    # Show surrounding lines for context
-                    for j in range(max(0, i-5), min(len(lines), i+6)):
-                        print(f"   {j}: {lines[j]}")
-                    break
-        else:
-            print("❌ 'Lasse Hansen' NOT found in iCal data")
-        
-        print("🔍 Searching for 'Storviltprøve' in iCal data...")
-        if 'Storviltprøve' in ical_data:
-            print("✅ Found 'Storviltprøve' in iCal data")
-            # Find all lines containing Storviltprøve
-            lines = ical_data.split('\n')
-            for i, line in enumerate(lines):
-                if 'Storviltprøve' in line:
-                    print(f"📅 Line {i}: {line}")
-                    # Show surrounding lines for context
-                    for j in range(max(0, i-5), min(len(lines), i+6)):
-                        print(f"   {j}: {lines[j]}")
-        else:
-            print("❌ 'Storviltprøve' NOT found in iCal data")
-        
-        print("🔍 Searching for 'Lasse Hansen - Storviltprøve kontrollør' in iCal data...")
-        if 'Lasse Hansen - Storviltprøve kontrollør' in ical_data:
-            print("✅ Found 'Lasse Hansen - Storviltprøve kontrollør' in iCal data")
-            # Find the exact line
-            lines = ical_data.split('\n')
-            for i, line in enumerate(lines):
-                if 'Lasse Hansen - Storviltprøve kontrollør' in line:
-                    print(f"📅 Line {i}: {line}")
-                    # Show surrounding lines for context
-                    for j in range(max(0, i-10), min(len(lines), i+11)):
-                        print(f"   {j}: {lines[j]}")
-                    break
-        else:
-            print("❌ 'Lasse Hansen - Storviltprøve kontrollør' NOT found in iCal data")
-        
-        print("🔍 Searching for '20250816' (16. august) in iCal data...")
-        if '20250816' in ical_data:
-            print("✅ Found '20250816' in iCal data")
-            # Find all lines containing 20250816
-            lines = ical_data.split('\n')
-            for i, line in enumerate(lines):
-                if '20250816' in line:
-                    print(f"📅 Line {i}: {line}")
-        else:
-            print("❌ '20250816' NOT found in iCal data")
-        
-        events = parse_ical_data(ical_data, from_date, to_date, auto_categorize)
-        print(f"Parsed events: {len(events)} events found")
-        
-        if not events:
-            print("No events found in date range")
+        if 'BEGIN:VEVENT' not in ical_data:
             return jsonify({
-                'success': True,
-                'message': 'Ingen nye aktiviteter funnet i kalenderen',
-                'imported_count': 0
-            })
-        
-        print(f"DEBUG: About to process {len(events)} events")
-        for i, event in enumerate(events):
-            print(f"DEBUG: Event {i+1}: {event.get('comment', 'No comment')} - Activities: {event.get('activities', [])}")
-        
-        # Save events to database
-        # Ensure database is initialized
+                'success': False,
+                'error': 'Kalenderfeeden inneholdt ingen hendelser'
+            }), 502
+
+        events = parse_ical_data(ical_data, from_date, to_date, auto_categorize)
+        print(f"Import: {len(events)} aktiviteter i perioden {from_date}–{to_date}")
+
         init_db()
-        
         conn = get_db_connection()
         if not conn:
             return jsonify({
                 'success': False,
                 'error': 'Database connection failed'
             }), 500
-            
+
         cursor = conn.cursor()
-        
+        placeholder = get_placeholder()
         imported_count = 0
-        
+        skipped_manual = 0
+
         try:
+            cursor.execute(
+                f'SELECT date, startTime, endTime FROM activities WHERE source = {placeholder} AND date >= {placeholder} AND date <= {placeholder}',
+                ('manual', from_date, to_date)
+            )
+            manual_slots = {(row[0], row[1], row[2]) for row in cursor.fetchall()}
+
+            events_to_save = []
             for event in events:
-                # Simple insert or update logic - no manual check
-                if IS_VERCEL:
-                    # PostgreSQL syntax - use ON CONFLICT DO UPDATE
-                    cursor.execute('''
-                        INSERT INTO activities (id, date, dayOfWeek, startTime, endTime, 
-                                              activities, colors, comment, rangeOfficer, source, created_at, updated_at)
-                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-                        ON CONFLICT (id) DO UPDATE SET
-                            date = EXCLUDED.date,
-                            dayOfWeek = EXCLUDED.dayOfWeek,
-                            startTime = EXCLUDED.startTime,
-                            endTime = EXCLUDED.endTime,
-                            activities = EXCLUDED.activities,
-                            colors = EXCLUDED.colors,
-                            comment = EXCLUDED.comment,
-                            rangeOfficer = EXCLUDED.rangeOfficer,
-                            source = EXCLUDED.source,
-                            updated_at = CURRENT_TIMESTAMP
-                    ''', (
-                        event['id'],
-                        event['date'],
-                        event['dayOfWeek'],
-                        event['startTime'],
-                        event['endTime'],
-                        json.dumps(event['activities']),
-                        json.dumps(event['colors']),
-                        event['comment'],
-                        event['rangeOfficer'],
-                        event['source']
-                    ))
-                    imported_count += 1
-                else:
-                    # SQLite syntax - use INSERT OR REPLACE
-                    cursor.execute('''
-                        INSERT OR REPLACE INTO activities (id, date, dayOfWeek, startTime, endTime, 
-                                                         activities, colors, comment, rangeOfficer, source, created_at, updated_at)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-                    ''', (
-                        event['id'],
-                        event['date'],
-                        event['dayOfWeek'],
-                        event['startTime'],
-                        event['endTime'],
-                        json.dumps(event['activities']),
-                        json.dumps(event['colors']),
-                        event['comment'],
-                        event['rangeOfficer'],
-                        event['source']
-                    ))
-                    imported_count += 1
-            
-            # Commit the transaction
+                if (event['date'], event['startTime'], event['endTime']) in manual_slots:
+                    skipped_manual += 1
+                    continue
+                events_to_save.append(event)
+
+            cursor.execute(
+                f'DELETE FROM activities WHERE source = {placeholder} AND date >= {placeholder} AND date <= {placeholder}',
+                ('imported', from_date, to_date)
+            )
+
+            insert_sql = '''
+                INSERT INTO activities (id, iCalUID, date, dayOfWeek, startTime, endTime,
+                                      activities, colors, comment, rangeOfficer, source, created_at, updated_at)
+                VALUES ({ph}, {ph}, {ph}, {ph}, {ph}, {ph}, {ph}, {ph}, {ph}, {ph}, {ph}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+            '''.format(ph=placeholder)
+            if IS_VERCEL:
+                insert_sql += '''
+                    ON CONFLICT (id) DO UPDATE SET
+                        iCalUID = EXCLUDED.iCalUID,
+                        date = EXCLUDED.date,
+                        dayOfWeek = EXCLUDED.dayOfWeek,
+                        startTime = EXCLUDED.startTime,
+                        endTime = EXCLUDED.endTime,
+                        activities = EXCLUDED.activities,
+                        colors = EXCLUDED.colors,
+                        comment = EXCLUDED.comment,
+                        rangeOfficer = EXCLUDED.rangeOfficer,
+                        source = EXCLUDED.source,
+                        updated_at = CURRENT_TIMESTAMP
+                '''
+            else:
+                insert_sql = insert_sql.replace('INSERT INTO', 'INSERT OR REPLACE INTO', 1)
+
+            for event in events_to_save:
+                cursor.execute(insert_sql, (
+                    event['id'],
+                    event.get('iCalUID'),
+                    event['date'],
+                    event['dayOfWeek'],
+                    event['startTime'],
+                    event['endTime'],
+                    json.dumps(event['activities']),
+                    json.dumps(event['colors']),
+                    event['comment'],
+                    event['rangeOfficer'],
+                    event['source']
+                ))
+                imported_count += 1
+
             conn.commit()
-            
         except Exception as e:
-            # Rollback on error
             try:
                 conn.rollback()
-            except:
-                pass  # Ignore rollback errors
+            except Exception:
+                pass
             print(f"Database error during import: {str(e)}")
-            print(f"Error type: {type(e)}")
             import traceback
             traceback.print_exc()
             raise e
         finally:
             try:
                 conn.close()
-            except:
-                pass  # Ignore close errors
-        
-        message_parts = []
-        if imported_count > 0:
-            message_parts.append(f'{imported_count} aktiviteter importert/oppdatert')
-        
-        if not message_parts:
-            message_parts.append('Ingen endringer')
-        
+            except Exception:
+                pass
+
+        message = f'{imported_count} aktiviteter importert/oppdatert' if imported_count else 'Ingen endringer'
+        if skipped_manual:
+            message += f' ({skipped_manual} hoppet over pga. manuelle aktiviteter)'
+
         return jsonify({
             'success': True,
-            'message': f'Suksess! {", ".join(message_parts)} fra Lorenskog Skytterlag kalender',
-            'imported_count': imported_count,
-            'debug_info': {
-                'total_events_processed': len(events) if 'events' in locals() else 0,
-                'events_processed': [event['comment'] for event in events[:5]] if 'events' in locals() else []
-            }
+            'message': f'Suksess! {message} fra Lorenskog Skytterlag kalender',
+            'imported_count': imported_count
         })
-        
+
     except requests.RequestException as e:
         print(f"Request exception: {str(e)}")
         return jsonify({
-            'success': False, 
+            'success': False,
             'error': f'Kunne ikke hente kalenderdata: {str(e)}'
         }), 500
     except Exception as e:
@@ -833,93 +734,100 @@ def import_calendar():
         import traceback
         traceback.print_exc()
         return jsonify({
-            'success': False, 
+            'success': False,
             'error': f'Feil ved import: {str(e)}'
         }), 500
+
+def unfold_ical_lines(ical_content):
+    """Join RFC 5545 folded lines so properties like DTSTART;TZID=... are complete."""
+    text = ical_content.replace('\r\n', '\n').replace('\r', '\n')
+    unfolded = []
+    for line in text.split('\n'):
+        if unfolded and line[:1] in (' ', '\t'):
+            unfolded[-1] += line[1:]
+        else:
+            unfolded.append(line)
+    return unfolded
+
+
+def unescape_ical_text(value):
+    if not value:
+        return value
+    return (
+        value.replace('\\\\', '\\')
+        .replace('\\n', '\n')
+        .replace('\\N', '\n')
+        .replace('\\,', ',')
+        .replace('\\;', ';')
+    )
+
+
+def split_ical_property(line):
+    if ':' not in line:
+        return None, {}, ''
+    name_params, value = line.split(':', 1)
+    parts = name_params.split(';')
+    params = {}
+    for part in parts[1:]:
+        if '=' in part:
+            key, val = part.split('=', 1)
+            params[key.upper()] = val
+        else:
+            params[part.upper()] = True
+    return parts[0].upper(), params, value
+
+
+def timeslot_activity_id(activity):
+    date = activity['date'].replace('-', '')
+    start = activity['startTime'].replace(':', '')
+    end = activity['endTime'].replace(':', '')
+    return f"ical-{date}-{start}-{end}"
+
 
 def parse_ical_data(ical_content, from_date=None, to_date=None, auto_categorize=True):
     """Parse iCal data and convert to activities"""
     events = []
     current_event = {}
     in_event = False
-    
-    # Day names for Norwegian
     day_names = ['Mandag', 'Tirsdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lørdag', 'Søndag']
-    
-    lines = ical_content.split('\n')
-    i = 0
-    while i < len(lines):
-        line = lines[i].strip()
-        
-        if line.startswith('BEGIN:VEVENT'):
+
+    for line in unfold_ical_lines(ical_content):
+        stripped = line.strip()
+        if stripped == 'BEGIN:VEVENT':
             current_event = {}
             in_event = True
-        elif line.startswith('END:VEVENT'):
-            if current_event and 'summary' in current_event:
-                print(f"📅 Processing event: {current_event.get('summary')} at {current_event.get('start')}")
-                print(f"📋 Full event data: {current_event}")
-                # Convert to activity format
-                activity = convert_event_to_activity(current_event, day_names, auto_categorize)
-                if activity:
-                    print(f"✅ Event converted: {activity['comment']}")
-                    # Filter by date range if specified
-                    if from_date and to_date:
-                        event_date = activity['date']
-                        if from_date <= event_date <= to_date:
+            continue
+        if stripped == 'END:VEVENT':
+            if in_event and current_event.get('summary'):
+                status = (current_event.get('status') or '').upper()
+                if status != 'CANCELLED':
+                    activity = convert_event_to_activity(current_event, day_names, auto_categorize)
+                    if activity:
+                        if not from_date or not to_date or from_date <= activity['date'] <= to_date:
                             events.append(activity)
-                            print(f"📅 Event within date range: {event_date}")
-                        else:
-                            print(f"❌ Event outside date range: {event_date} (not {from_date}-{to_date})")
-                    else:
-                        events.append(activity)
-                else:
-                    print(f"❌ Event filtered out: {current_event.get('summary')}")
             in_event = False
-        elif in_event and line.startswith('SUMMARY:'):
-            # Handle multi-line SUMMARY
-            summary = line[8:]
-            i += 1
-            while i < len(lines) and lines[i].startswith(' '):
-                summary += lines[i][1:]  # Remove leading space
-                i += 1
-            current_event['summary'] = summary
-            continue  # Skip the increment at the end
-        elif in_event and line.startswith('DTSTART:'):
-            current_event['start'] = parse_ical_datetime(line[8:])
-        elif in_event and line.startswith('DTEND:'):
-            current_event['end'] = parse_ical_datetime(line[6:])
-        elif in_event and line.startswith('DESCRIPTION:'):
-            # Handle multi-line DESCRIPTION
-            description = line[12:]
-            i += 1
-            while i < len(lines) and lines[i].startswith(' '):
-                description += lines[i][1:]  # Remove leading space
-                i += 1
-            current_event['description'] = description
-            continue  # Skip the increment at the end
-        elif in_event and line.startswith('UID:'):
-            current_event['uid'] = line[4:]
-        elif in_event and line.startswith('CREATED:'):
-            current_event['created'] = line[8:]
-        elif in_event and line.startswith('LAST-MODIFIED:'):
-            current_event['last_modified'] = line[14:]
-        elif in_event and line.startswith('SEQUENCE:'):
-            current_event['sequence'] = line[9:]
-        elif in_event and line.startswith('STATUS:'):
-            current_event['status'] = line[7:]
-        elif in_event and line.startswith('TRANSP:'):
-            current_event['transp'] = line[7:]
-        
-        i += 1
-    
-    # Remove duplicates by prioritizing "Standplassleder" over "Vakt Standplass"
+            current_event = {}
+            continue
+        if not in_event:
+            continue
+
+        name, params, value = split_ical_property(stripped)
+        if name == 'SUMMARY':
+            current_event['summary'] = unescape_ical_text(value)
+        elif name == 'DTSTART':
+            current_event['start'] = parse_ical_datetime(value, params.get('TZID'))
+        elif name == 'DTEND':
+            current_event['end'] = parse_ical_datetime(value, params.get('TZID'))
+        elif name == 'DESCRIPTION':
+            current_event['description'] = unescape_ical_text(value)
+        elif name == 'UID':
+            current_event['uid'] = value
+        elif name == 'STATUS':
+            current_event['status'] = value
+
     events = remove_duplicate_events(events)
-    
-    # Debug: Log all events that will be returned
-    print(f"🎯 Final events to be imported: {len(events)}")
     for event in events:
-        print(f"📅 Final event: {event['comment']} at {event['startTime']}-{event['endTime']}")
-    
+        event['id'] = timeslot_activity_id(event)
     return events
 
 def remove_duplicate_events(events):
@@ -941,66 +849,46 @@ def remove_duplicate_events(events):
             # No duplicates, keep the event
             filtered_events.append(group_events[0])
         else:
-            # Duplicates found, combine activities
-            print(f"🔍 Found duplicates for key: {key}")
-            for event in group_events:
-                print(f"📋 Event: {event['comment']} with activities: {event['activities']}")
-            
-            # Choose the base event (prefer Standplassleder, then Storviltprøve kontrollør, then newest)
+            # Named standplassleder beats ledig standplassleder; then storvilt; then other.
             base_event = group_events[0]
-            best_priority = 0
-            
+            best_priority = -1
+
             for event in group_events:
                 summary = event['comment'].lower()
-                priority = 0
-                
-                # Highest priority: Standplassleder
                 if 'standplassleder' in summary:
-                    priority = 3
-                # Medium priority: Storviltprøve kontrollør
+                    priority = 30
                 elif 'storviltprøve kontrollør' in summary:
-                    priority = 2
-                # Lower priority: Other events
+                    priority = 20
                 else:
-                    priority = 1
-                
-                # If same priority, prefer the one that's not "ledig" (more specific info)
-                if priority == best_priority and 'ledig' in summary and 'ledig' not in base_event['comment'].lower():
-                    continue  # Keep current base_event if it's not "ledig"
-                
+                    priority = 10
+                if 'ledig' not in summary:
+                    priority += 5
                 if priority > best_priority:
                     base_event = event
                     best_priority = priority
             
-            # Combine all activities from all events
+            # Combine all activities from all events, then pick range officer separately.
             all_activities = []
             all_colors = []
-            range_officer = "Ikke satt"  # Default
-            has_standplassleder = False
-            
+            range_officer = "Ikke satt"
+
             for event in group_events:
                 all_activities.extend(event['activities'])
                 all_colors.extend(event['colors'])
-                
-                # Check if any event has Standplassleder
-                if 'standplassleder' in event['comment'].lower():
-                    has_standplassleder = True
-                    
-                    # Extract range officer name directly from comment if it's a Standplassleder
-                    if ' - ' in event['comment']:
-                        # Try to extract name from "Name - Standplassleder" format
-                        comment_parts = event['comment'].replace('Importert fra Lorenskog Skytterlag: ', '').split(' - ')
-                        if len(comment_parts) >= 2 and 'standplassleder' in comment_parts[1].lower():
-                            extracted_name = comment_parts[0].strip()
-                            if extracted_name and extracted_name != "Ledig":
-                                range_officer = extracted_name
-                                print(f"🔍 DEBUG: Extracted range officer '{extracted_name}' from comment: {event['comment']}")
-                                break  # Standplassleder is highest priority
-                    
-                    # Fallback to existing rangeOfficer if extraction failed
-                    elif event.get('rangeOfficer') and event['rangeOfficer'] != "Ikke satt":
-                        range_officer = event['rangeOfficer']
-                        break
+
+            for event in group_events:
+                if 'standplassleder' not in event['comment'].lower():
+                    continue
+                if ' - ' in event['comment']:
+                    comment_parts = event['comment'].replace('Importert fra Lorenskog Skytterlag: ', '').split(' - ')
+                    if len(comment_parts) >= 2 and 'standplassleder' in comment_parts[1].lower():
+                        extracted_name = comment_parts[0].strip()
+                        if extracted_name and extracted_name.lower() != 'ledig':
+                            range_officer = extracted_name
+                            break
+                elif event.get('rangeOfficer') and event['rangeOfficer'] != "Ikke satt":
+                    range_officer = event['rangeOfficer']
+                    break
             
             # Remove duplicates while preserving order
             unique_activities = []
@@ -1021,9 +909,12 @@ def remove_duplicate_events(events):
             combined_event['activities'] = unique_activities
             combined_event['colors'] = unique_colors
             combined_event['rangeOfficer'] = range_officer
-            
-            print(f"🔍 DEBUG: range_officer = '{range_officer}'")
-            print(f"🔍 DEBUG: combined_event['rangeOfficer'] = '{combined_event['rangeOfficer']}'")
+            merged_uids = []
+            for event in group_events:
+                uid = event.get('iCalUID')
+                if uid:
+                    merged_uids.extend(part for part in uid.split(',') if part)
+            combined_event['iCalUID'] = ','.join(sorted(set(merged_uids)))
             
             # Clean up the combined comment - remove prefixes and make it cleaner
             clean_comments = []
@@ -1049,84 +940,61 @@ def remove_duplicate_events(events):
                 # Always show all comments, regardless of count
                 combined_event['comment'] = f"{', '.join(clean_comments)}"
             
-            print(f"🎯 Combined event: {combined_event['comment']} with activities: {unique_activities}")
             filtered_events.append(combined_event)
     
     return filtered_events
 
-def parse_ical_datetime(dt_string):
-    """Parse iCal datetime string"""
-    print(f"🕐 Parsing datetime: {dt_string}")
-    
-    # Handle different iCal datetime formats
-    if 'T' in dt_string and 'Z' in dt_string:
-        # Format: 20250108T180000Z - Z means UTC
-        # Convert to local time (Europe/Oslo = UTC+2 in summer)
-        dt_string = dt_string.replace('Z', '')
-        parsed = datetime.strptime(dt_string, '%Y%m%dT%H%M%S')
-        # Add 2 hours for Europe/Oslo summer time
-        parsed = parsed + timedelta(hours=2)
-        print(f"✅ Parsed UTC datetime: {dt_string} -> {parsed} -> {parsed.strftime('%H:%M')}")
-        return parsed
-    elif 'T' in dt_string and len(dt_string) == 15:
-        # Format: 20250108T180000 - assume local time
-        parsed = datetime.strptime(dt_string, '%Y%m%dT%H%M%S')
-        print(f"✅ Parsed local datetime: {dt_string} -> {parsed} -> {parsed.strftime('%H:%M')}")
-        return parsed
-    
-    try:
-        # Try other formats
-        parsed = datetime.fromisoformat(dt_string.replace('T', ' ').replace('Z', ''))
-        print(f"✅ Parsed datetime: {parsed} -> {parsed.strftime('%H:%M')}")
-        return parsed
-    except Exception as e:
-        print(f"❌ Failed to parse datetime: {dt_string} - {e}")
+def parse_ical_datetime(dt_string, tzid=None):
+    """Parse iCal datetime into Europe/Oslo local time, including DST."""
+    if not dt_string:
         return None
+    dt_string = dt_string.strip()
+    try:
+        if dt_string.endswith('Z'):
+            parsed = datetime.strptime(dt_string, '%Y%m%dT%H%M%SZ').replace(tzinfo=timezone.utc)
+            return parsed.astimezone(OSLO_TZ)
+        if 'T' not in dt_string and len(dt_string) == 8:
+            return datetime.strptime(dt_string, '%Y%m%d').replace(tzinfo=OSLO_TZ)
+        if 'T' in dt_string:
+            parsed = datetime.strptime(dt_string[:15], '%Y%m%dT%H%M%S')
+            tz = ZoneInfo(tzid.strip('"')) if tzid else OSLO_TZ
+            return parsed.replace(tzinfo=tz)
+    except Exception as e:
+        print(f"Failed to parse datetime: {dt_string} tzid={tzid} ({e})")
+        return None
+    return None
 
 def convert_event_to_activity(event, day_names, auto_categorize=True):
     """Convert iCal event to activity format"""
-    print(f"DEBUG: convert_event_to_activity called with event: {event}")
-    
     if not event.get('start') or not event.get('summary'):
-        print(f"DEBUG: Missing start or summary, returning None")
         return None
-    
+
     start_dt = event['start']
-    end_dt = event.get('end', start_dt + timedelta(hours=1))
-    
-    # Get day of week
-    day_of_week = day_names[(start_dt.weekday()) % 7]
-    
-    # Determine activity types based on summary and day of week
+    end_dt = event.get('end') or (start_dt + timedelta(hours=1))
+    if start_dt.tzinfo:
+        start_dt = start_dt.astimezone(OSLO_TZ)
+        end_dt = end_dt.astimezone(OSLO_TZ)
+
+    day_of_week = day_names[start_dt.weekday() % 7]
     summary = event['summary']
-    print(f"DEBUG: Converting event: {summary}")
     activity_types = determine_activity_types(summary, day_of_week, auto_categorize)
-    print(f"DEBUG: Activity types determined: {activity_types}")
     if not activity_types:
-        print(f"DEBUG: No activity types found, skipping event: {summary}")
-        return None  # Skip maintenance events
-    
-    # Extract range officer
-    range_officer = extract_range_officer(summary)
-    
-    # Get colors for multiple activities
-    colors = [get_color_for_activity(activity_type) for activity_type in activity_types]
-    
-    result = {
-        'id': f"ical-{start_dt.strftime('%Y%m%d%H%M%S')}-{hash(summary) % 10000}",
+        return None
+
+    activity = {
         'date': start_dt.strftime('%Y-%m-%d'),
-        'dayOfWeek': day_names[(start_dt.weekday()) % 7],
+        'dayOfWeek': day_of_week,
         'startTime': start_dt.strftime('%H:%M'),
         'endTime': end_dt.strftime('%H:%M'),
         'activities': activity_types,
-        'colors': colors,
+        'colors': [get_color_for_activity(activity_type) for activity_type in activity_types],
         'comment': f"Importert fra Lorenskog Skytterlag: {summary}",
-        'rangeOfficer': range_officer,
-        'source': 'imported'
+        'rangeOfficer': extract_range_officer(summary),
+        'source': 'imported',
+        'iCalUID': event.get('uid')
     }
-    
-    print(f"DEBUG: Returning activity: {result}")
-    return result
+    activity['id'] = timeslot_activity_id(activity)
+    return activity
 
 def determine_activity_types(summary, day_of_week=None, auto_categorize=True):
     """Determine activity types from summary and day of week - can return multiple types"""
@@ -1192,27 +1060,14 @@ def determine_activity_types(summary, day_of_week=None, auto_categorize=True):
 
 def extract_range_officer(summary):
     """Extract range officer from summary"""
-    print(f"🔍 Backend extract_range_officer called with: {summary}")
-    
-    # Extract person name from summary (e.g., "Thomas Bogdahl - Standplassleder", "Jan-Erik Hansen - Standplassleder", "Lasse Hansen - Storviltprøve kontrollør")
-    # Use non-greedy match to get everything up to the last " - "
     match = re.match(r'^(.+?)\s*-\s*(.+)$', summary)
     if not match:
-        print(f"❌ Backend: No match found for: {summary}")
         return 'Ikke satt'
-    
+
     person_name = match.group(1).strip()
     role = match.group(2).strip().lower()
-    
-    print(f"📋 Backend: {summary} -> person: {person_name}, role: {role}")
-    
-    # Only set range officer if the role is "standplassleder"
-    # Don't set for "vakt standplass", "klargjøring", etc.
-    if role == 'standplassleder':
-        print(f"✅ Backend: Setting range officer to: {person_name}")
+    if role == 'standplassleder' and person_name and person_name.lower() != 'ledig':
         return person_name
-    
-    print(f"❌ Backend: Role '{role}' is not 'standplassleder', returning 'Ikke satt' for: {summary}")
     return 'Ikke satt'
 
 def get_color_for_activity(activity_type):
