@@ -604,8 +604,12 @@ def delete_activity(activity_id):
 TODAY_SYNC_MAX_AGE = timedelta(minutes=15)
 
 
+def oslo_now():
+    return datetime.now(OSLO_TZ)
+
+
 def oslo_today():
-    return datetime.now(OSLO_TZ).strftime('%Y-%m-%d')
+    return oslo_now().strftime('%Y-%m-%d')
 
 
 def map_activity_row(row):
@@ -653,8 +657,7 @@ def fetch_activities_for_date(date_str):
         conn.close()
 
 
-def is_today_sync_fresh():
-    today = oslo_today()
+def is_sync_fresh(scope):
     conn = get_db_connection()
     if not conn:
         return False
@@ -663,7 +666,7 @@ def is_today_sync_fresh():
         placeholder = get_placeholder()
         cursor.execute(
             f'SELECT synced_at FROM calendar_sync WHERE scope = {placeholder}',
-            (f'today:{today}',)
+            (scope,)
         )
         row = cursor.fetchone()
         if not row or not row[0]:
@@ -681,15 +684,13 @@ def is_today_sync_fresh():
         conn.close()
 
 
-def mark_today_synced():
-    today = oslo_today()
+def mark_synced(scope):
     conn = get_db_connection()
     if not conn:
         return
     try:
         cursor = conn.cursor()
         placeholder = get_placeholder()
-        scope = f'today:{today}'
         if IS_VERCEL:
             cursor.execute(
                 f'''INSERT INTO calendar_sync (scope, synced_at)
@@ -705,6 +706,35 @@ def mark_today_synced():
         conn.commit()
     finally:
         conn.close()
+
+
+def fetch_next_opening(after_dt):
+    conn = get_db_connection()
+    if not conn:
+        return None
+    try:
+        cursor = conn.cursor()
+        placeholder = get_placeholder()
+        date_str = after_dt.strftime('%Y-%m-%d')
+        time_str = after_dt.strftime('%H:%M')
+        cursor.execute(
+            f'''SELECT id, iCalUID, date, dayOfWeek, startTime, endTime, activities, colors, comment, rangeOfficer, source
+                FROM activities
+                WHERE date > {placeholder}
+                   OR (date = {placeholder} AND startTime > {placeholder})
+                ORDER BY date, startTime
+                LIMIT 1''',
+            (date_str, date_str, time_str)
+        )
+        row = cursor.fetchone()
+        return map_activity_row(row) if row else None
+    finally:
+        conn.close()
+
+
+def has_remaining_today_slots(activities, now):
+    now_time = now.strftime('%H:%M')
+    return any((item.get('endTime') or '') >= now_time for item in activities)
 
 
 def import_calendar_range(from_date, to_date, auto_categorize=True):
@@ -813,17 +843,39 @@ def import_calendar_range(from_date, to_date, auto_categorize=True):
 def get_today():
     try:
         init_db()
-        today = oslo_today()
+        now = oslo_now()
+        today = now.strftime('%Y-%m-%d')
+        week_end = (now + timedelta(days=6)).strftime('%Y-%m-%d')
+        want_sync = request.args.get('sync') == '1'
         refreshed = False
-        if not is_today_sync_fresh():
+
+        today_stale = not is_sync_fresh(f'today:{today}')
+        activities = fetch_activities_for_date(today)
+        remaining = has_remaining_today_slots(activities, now)
+        week_stale = (not remaining) and (not is_sync_fresh(f'week:{today}'))
+
+        if want_sync and today_stale:
             import_calendar_range(today, today, True)
-            mark_today_synced()
+            mark_synced(f'today:{today}')
             refreshed = True
+            activities = fetch_activities_for_date(today)
+            remaining = has_remaining_today_slots(activities, now)
+            week_stale = (not remaining) and (not is_sync_fresh(f'week:{today}'))
+
+        if want_sync and week_stale:
+            import_calendar_range(today, week_end, True)
+            mark_synced(f'week:{today}')
+            mark_synced(f'today:{today}')
+            refreshed = True
+            activities = fetch_activities_for_date(today)
+
         return jsonify({
             'success': True,
             'date': today,
             'refreshed': refreshed,
-            'activities': fetch_activities_for_date(today)
+            'stale': (not want_sync) and (today_stale or week_stale),
+            'activities': activities,
+            'nextOpening': fetch_next_opening(now)
         })
     except Exception as e:
         print(f"Today endpoint error: {e}")

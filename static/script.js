@@ -7,6 +7,7 @@ let adminMode = false;
 
 // Initialize openingHours as empty array
 let openingHours = [];
+let todayNextOpening = null;
 
 // Facebook group function
 function openFacebookGroup() {
@@ -278,14 +279,102 @@ const monthNames = [
 // Norwegian day names (Monday first)
 const dayNames = ['Mandag', 'Tirsdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lørdag', 'Søndag'];
 
+const TODAY_CACHE_KEY = 'losbyTodayCache';
+
+function readTodayCache() {
+    try {
+        const cached = JSON.parse(localStorage.getItem(TODAY_CACHE_KEY) || 'null');
+        if (cached && cached.date === getTodayDateString() && Array.isArray(cached.activities)) {
+            return cached;
+        }
+    } catch (error) {
+        console.warn('Could not read today cache:', error);
+    }
+    return null;
+}
+
+function writeTodayCache(payload) {
+    if (!payload || !payload.date) return;
+    try {
+        localStorage.setItem(TODAY_CACHE_KEY, JSON.stringify({
+            date: payload.date,
+            activities: payload.activities || [],
+            nextOpening: payload.nextOpening || null
+        }));
+    } catch (error) {
+        console.warn('Could not write today cache:', error);
+    }
+}
+
+function applyTodayPayload(payload) {
+    if (!payload) return;
+    todayNextOpening = payload.nextOpening || null;
+    if (!payload.date || !Array.isArray(payload.activities)) return;
+    const rest = (openingHours || []).filter(item => item.date !== payload.date);
+    openingHours = rest.concat(payload.activities);
+}
+
+async function fetchToday(sync = false) {
+    const response = await fetch(sync ? '/api/today?sync=1' : '/api/today');
+    if (!response.ok) {
+        throw new Error('Kunne ikke sjekke dagens åpningstider');
+    }
+    const result = await response.json();
+    if (!result.success) {
+        throw new Error(result.error || 'Kunne ikke sjekke dagens åpningstider');
+    }
+    return result;
+}
+
+async function refreshTodayFromSmartplan() {
+    try {
+        const synced = await fetchToday(true);
+        applyTodayPayload(synced);
+        writeTodayCache(synced);
+        if (synced.refreshed) {
+            await loadData();
+        }
+        refreshViews();
+    } catch (error) {
+        console.error('today sync:', error);
+    }
+}
+
 // Initialize app
 document.addEventListener('DOMContentLoaded', async function() {
     setupEventListeners();
+
+    const cached = readTodayCache();
+    if (cached) {
+        applyTodayPayload(cached);
+    }
     switchView('today');
-    renderToday({ loading: true });
-    await ensureTodayData();
-    await loadData();
-    refreshViews();
+    if (!cached) {
+        renderToday({ loading: true });
+    }
+
+    try {
+        const todayPromise = fetchToday(false);
+        const dataPromise = loadData();
+
+        const todayResult = await todayPromise;
+        applyTodayPayload(todayResult);
+        writeTodayCache(todayResult);
+        renderToday();
+
+        if (todayResult.stale) {
+            refreshTodayFromSmartplan();
+        }
+
+        await dataPromise;
+        applyTodayPayload(todayResult);
+        refreshViews();
+    } catch (error) {
+        console.error('Startup load failed:', error);
+        if (!cached) {
+            renderToday();
+        }
+    }
     
     // Debug: Add button to clear localStorage if needed
     if (window.location.search.includes('debug')) {
@@ -575,18 +664,6 @@ function updateViewToggle() {
     }
 }
 
-async function ensureTodayData() {
-    try {
-        const response = await fetch('/api/today');
-        if (!response.ok) {
-            throw new Error('Kunne ikke sjekke dagens åpningstider');
-        }
-        await response.json();
-    } catch (error) {
-        console.error('ensureTodayData:', error);
-    }
-}
-
 function getTodayDateString() {
     return toLocalISODate(new Date());
 }
@@ -640,6 +717,44 @@ function formatAudience(activities) {
     };
 }
 
+function slotStartDate(item) {
+    const date = new Date(`${item.date}T00:00:00`);
+    return parseTimeOnDate(date, item.startTime);
+}
+
+function findNextOpening(now) {
+    const upcoming = (openingHours || [])
+        .filter(item => item && item.date && item.startTime)
+        .filter(item => slotStartDate(item) > now)
+        .sort((a, b) => slotStartDate(a) - slotStartDate(b));
+    return upcoming[0] || todayNextOpening;
+}
+
+function formatOpeningDay(item) {
+    const date = new Date(`${item.date}T12:00:00`);
+    const weekday = item.dayOfWeek || dayNames[(date.getDay() + 6) % 7];
+    return `${weekday} ${date.getDate()}. ${monthNames[date.getMonth()].toLowerCase()}`;
+}
+
+function nextOpeningHtml(now) {
+    const next = findNextOpening(now);
+    if (!next) return '';
+    const info = formatAudience(next.activities);
+    const officer = next.rangeOfficer && next.rangeOfficer !== 'Ikke satt'
+        ? next.rangeOfficer
+        : '';
+    return `
+        <div class="today-next">
+            <p class="today-next-label">Neste åpning</p>
+            <p class="today-next-when">${formatOpeningDay(next)}</p>
+            <p class="today-time">${next.startTime}–${next.endTime}</p>
+            <p class="today-who">${info.who}</p>
+            ${info.ranges ? `<p class="today-ranges">${info.ranges}</p>` : ''}
+            ${officer ? `<p class="today-officer">${officer}</p>` : ''}
+        </div>
+    `;
+}
+
 function renderToday(options = {}) {
     const container = document.getElementById('todayContent');
     if (!container) return;
@@ -661,11 +776,12 @@ function renderToday(options = {}) {
 
     const slots = getTodayActivities();
     if (slots.length === 0) {
+        const nextHtml = nextOpeningHtml(now);
         container.innerHTML = `
             <div class="today-hero closed">
                 <p class="today-date">${headingDate}</p>
                 <h2 class="today-status">Stengt</h2>
-                <p class="today-substatus">Ingen åpningstid i dag.</p>
+                ${nextHtml || '<p class="today-substatus">Ingen åpningstid i dag.</p>'}
             </div>
         `;
         return;
@@ -706,7 +822,7 @@ function renderToday(options = {}) {
         <div class="today-hero ${heroClass}">
             <p class="today-date">${headingDate}</p>
             <h2 class="today-status">${statusText}</h2>
-            ${slotHtml || '<p class="today-substatus">Dagens økter er over.</p>'}
+            ${slotHtml || nextOpeningHtml(now) || '<p class="today-substatus">Dagens økter er over.</p>'}
         </div>
     `;
 }
