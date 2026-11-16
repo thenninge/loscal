@@ -1,0 +1,631 @@
+/* ============================================
+   SKYTTERLAG ANIMASJONER
+   ============================================ */
+
+.animation-banner {
+    position: relative;
+    width: 100%;
+    height: 80px;
+    overflow: hidden;
+    background: linear-gradient(to bottom, #87CEEB 0%, #98FB98 70%, #228B22 100%);
+    border-bottom: 3px solid #1a5c1a;
+}
+
+/* ============================================
+   ANIMASJON 1: GUBBE-JAANSEN (Pac-Man stil)
+   ============================================ */
+
+.gubbe-jaansen {
+    position: absolute;
+    bottom: 8px;
+    animation: gubbe-walk 12s linear infinite;
+}
+
+@keyframes gubbe-walk {
+    0% { left: -60px; }
+    100% { left: 100%; }
+}
+
+.gubbe {
+    width: 48px;
+    height: 48px;
+    position: relative;
+    image-rendering: pixelated;
+}
+
+.gubbe-body {
+    position: absolute;
+    width: 32px;
+    height: 40px;
+    background: #d4a574;
+    border-radius: 8px 8px 4px 4px;
+    left: 8px;
+    top: 8px;
+}
+
+.gubbe-head {
+    position: absolute;
+    width: 24px;
+    height: 24px;
+    background: #ffcc99;
+    border-radius: 50%;
+    left: 12px;
+    top: 0;
+    border: 2px solid #cc9966;
+}
+
+.gubbe-hat {
+    position: absolute;
+    width: 28px;
+    height: 12px;
+    background: #2d5016;
+    border-radius: 4px 4px 0 0;
+    left: 10px;
+    top: -6px;
+}
+
+.gubbe-hat::after {
+    content: '';
+    position: absolute;
+    width: 32px;
+    height: 4px;
+    background: #1a3009;
+    left: -2px;
+    bottom: 0;
+    border-radius: 2px;
+}
+
+.gubbe-rifle {
+    position: absolute;
+    width: 36px;
+    height: 6px;
+    background: #4a3728;
+    left: 24px;
+    top: 20px;
+    border-radius: 2px;
+    transform: rotate(-15deg);
+    animation: rifle-bob 0.3s ease-in-out infinite;
+}
+
+@keyframes rifle-bob {
+    0%, 100% { transform: rotate(-15deg); }
+    50% { transform: rotate(-12deg); }
+}
+
+.gubbe-legs {
+    position: absolute;
+    bottom: 0;
+    left: 14px;
+    width: 20px;
+    height: 12px;
+}
+
+.gubbe-leg {
+    position: absolute;
+    width: 8px;
+    height: 12px;
+    background: #2d5016;
+    border-radius: 2px;
+}
+
+.gubbe-leg.left {
+    left: 0;
+    animation: leg-walk 0.3s ease-in-out infinite;
+}
+
+.gubbe-leg.right {
+    right: 0;
+    animation: leg-walk 0.3s ease-in-out infinite 0.15s;
+}
+
+@keyframes leg-walk {
+    0%, 100% { height: 12px; }
+    50% { height: 8px; }
+}
+
+/* Leirduer */
+.leirdue {
+    position: absolute;
+    width: 24px;
+    height: 16px;
+    animation: leirdue-fly 8s linear infinite;
+}
+
+.leirdue-body {
+    width: 20px;
+    height: 12px;
+    background: #ff6b35;
+    border-radius: 50%;
+    position: absolute;
+    left: 2px;
+    top: 2px;
+}
+
+.leirdue-wing {
+    position: absolute;
+    width: 10px;
+    height: 6px;
+    background: #ff8c5a;
+    border-radius: 50%;
+    top: 0;
+    animation: wing-flap 0.15s ease-in-out infinite;
+}
+
+.leirdue-wing.left { left: 0; }
+.leirdue-wing.right { right: 0; transform: scaleX(-1); }
+
+@keyframes wing-flap {
+    0%, 100% { transform: rotate(-20deg); }
+    50% { transform: rotate(20deg); }
+}
+
+.leirdue-face {
+    position: absolute;
+    left: 14px;
+    top: 4px;
+    font-size: 8px;
+}
+
+@keyframes leirdue-fly {
+    0% { 
+        right: -30px; 
+        top: 20px;
+        opacity: 1;
+    }
+    80% { 
+        opacity: 1;
+    }
+    85% {
+        opacity: 0;
+        transform: scale(1.5) rotate(45deg);
+    }
+    86%, 100% {
+        opacity: 0;
+        right: 100%;
+    }
+}
+
+.leirdue:nth-child(2) { animation-delay: 2s; top: 15px; }
+.leirdue:nth-child(3) { animation-delay: 4s; top: 25px; }
+.leirdue:nth-child(4) { animation-delay: 6s; top: 10px; }
+
+/* Poff-effekt */
+.poff {
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    pointer-events: none;
+    opacity: 0;
+}
+
+.poff-particle {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    background: #ff6b35;
+    border-radius: 50%;
+}
+
+/* ============================================
+   ANIMASJON 2: ELGEN SOM STIKKER AV
+   ============================================ */
+
+.elg-chase {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+}
+
+.elg {
+    position: absolute;
+    bottom: 10px;
+    animation: elg-run 15s linear infinite;
+    z-index: 10;
+}
+
+@keyframes elg-run {
+    0% { left: -80px; }
+    100% { left: 110%; }
+}
+
+.elg-body {
+    position: relative;
+    width: 60px;
+    height: 40px;
+}
+
+.elg-torso {
+    position: absolute;
+    width: 50px;
+    height: 28px;
+    background: #5c4033;
+    border-radius: 12px;
+    left: 5px;
+    top: 8px;
+}
+
+.elg-head {
+    position: absolute;
+    width: 24px;
+    height: 20px;
+    background: #5c4033;
+    border-radius: 8px 12px 6px 6px;
+    left: 45px;
+    top: 4px;
+}
+
+.elg-snout {
+    position: absolute;
+    width: 14px;
+    height: 10px;
+    background: #4a3429;
+    border-radius: 4px;
+    right: -8px;
+    bottom: 2px;
+}
+
+.elg-eye {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    background: white;
+    border-radius: 50%;
+    right: 4px;
+    top: 4px;
+}
+
+.elg-eye::after {
+    content: '';
+    position: absolute;
+    width: 3px;
+    height: 3px;
+    background: black;
+    border-radius: 50%;
+    right: 0;
+    top: 1px;
+    animation: elg-look-back 2s ease-in-out infinite;
+}
+
+@keyframes elg-look-back {
+    0%, 70%, 100% { right: 0; }
+    80%, 90% { right: 2px; }
+}
+
+.elg-antler {
+    position: absolute;
+    width: 20px;
+    height: 16px;
+    border: 3px solid #3d2817;
+    border-bottom: none;
+    border-radius: 8px 8px 0 0;
+    top: -12px;
+}
+
+.elg-antler.left { left: 2px; transform: rotate(-15deg); }
+.elg-antler.right { right: 2px; transform: rotate(15deg); }
+
+.elg-leg {
+    position: absolute;
+    width: 6px;
+    height: 20px;
+    background: #4a3429;
+    bottom: -16px;
+    border-radius: 2px;
+}
+
+.elg-leg:nth-child(1) { left: 10px; animation: elg-leg-run 0.2s ease-in-out infinite; }
+.elg-leg:nth-child(2) { left: 20px; animation: elg-leg-run 0.2s ease-in-out infinite 0.1s; }
+.elg-leg:nth-child(3) { right: 15px; animation: elg-leg-run 0.2s ease-in-out infinite 0.05s; }
+.elg-leg:nth-child(4) { right: 5px; animation: elg-leg-run 0.2s ease-in-out infinite 0.15s; }
+
+@keyframes elg-leg-run {
+    0%, 100% { height: 20px; bottom: -16px; }
+    50% { height: 14px; bottom: -10px; }
+}
+
+.elg-wave {
+    position: absolute;
+    right: -20px;
+    top: 15px;
+    font-size: 16px;
+    animation: elg-wave-hand 0.5s ease-in-out infinite;
+}
+
+@keyframes elg-wave-hand {
+    0%, 100% { transform: rotate(-10deg); }
+    50% { transform: rotate(20deg); }
+}
+
+/* Jegere */
+.jeger {
+    position: absolute;
+    bottom: 8px;
+    animation: jeger-chase 15s linear infinite;
+}
+
+.jeger:nth-child(2) { animation-delay: 0.8s; }
+.jeger:nth-child(3) { animation-delay: 1.6s; }
+.jeger:nth-child(4) { animation-delay: 2.4s; }
+
+@keyframes jeger-chase {
+    0% { left: -150px; }
+    100% { left: calc(110% - 80px); }
+}
+
+.jeger-body {
+    position: relative;
+    width: 32px;
+    height: 44px;
+}
+
+.jeger-head {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    background: #ffcc99;
+    border-radius: 50%;
+    left: 8px;
+    top: 0;
+}
+
+.jeger-hat {
+    position: absolute;
+    width: 20px;
+    height: 8px;
+    background: #ff6600;
+    border-radius: 4px 4px 0 0;
+    left: 6px;
+    top: -4px;
+}
+
+.jeger-vest {
+    position: absolute;
+    width: 24px;
+    height: 20px;
+    background: #ff6600;
+    border-radius: 4px;
+    left: 4px;
+    top: 14px;
+}
+
+.jeger-pants {
+    position: absolute;
+    width: 20px;
+    height: 12px;
+    background: #2d5016;
+    left: 6px;
+    top: 32px;
+}
+
+.jeger-leg {
+    position: absolute;
+    width: 7px;
+    height: 14px;
+    background: #2d5016;
+    bottom: -10px;
+    border-radius: 2px;
+}
+
+.jeger-leg.left { left: 6px; animation: jeger-leg 0.25s ease-in-out infinite; }
+.jeger-leg.right { right: 6px; animation: jeger-leg 0.25s ease-in-out infinite 0.125s; }
+
+@keyframes jeger-leg {
+    0%, 100% { height: 14px; }
+    50% { height: 10px; }
+}
+
+/* Snubling og kaos */
+.jeger.snubler {
+    animation: jeger-snuble 15s linear infinite;
+}
+
+@keyframes jeger-snuble {
+    0% { left: -150px; transform: rotate(0deg); }
+    30% { transform: rotate(0deg); }
+    35% { transform: rotate(25deg) translateY(-5px); }
+    40% { transform: rotate(-10deg); }
+    45% { transform: rotate(0deg); }
+    100% { left: calc(110% - 80px); transform: rotate(0deg); }
+}
+
+.jeger.mister-lua .jeger-hat {
+    animation: hat-fly 15s linear infinite;
+}
+
+@keyframes hat-fly {
+    0%, 50% { transform: translateY(0) rotate(0deg); opacity: 1; }
+    55% { transform: translateY(-30px) rotate(180deg); opacity: 1; }
+    60%, 100% { transform: translateY(-30px) rotate(360deg); opacity: 0; }
+}
+
+.jeger-sweat {
+    position: absolute;
+    right: -8px;
+    top: 4px;
+    font-size: 10px;
+    opacity: 0;
+    animation: sweat-appear 2s ease-in-out infinite;
+}
+
+@keyframes sweat-appear {
+    0%, 80%, 100% { opacity: 0; }
+    85%, 95% { opacity: 1; }
+}
+
+/* ============================================
+   TOGGLE MELLOM ANIMASJONER
+   ============================================ */
+
+.animation-toggle {
+    position: absolute;
+    top: 4px;
+    right: 8px;
+    z-index: 100;
+    display: flex;
+    gap: 4px;
+}
+
+.animation-toggle button {
+    padding: 2px 8px;
+    font-size: 10px;
+    background: rgba(255,255,255,0.8);
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.animation-toggle button.active {
+    background: #3498db;
+    color: white;
+    border-color: #2980b9;
+}
+
+.animation-toggle button:hover {
+    background: #e0e0e0;
+}
+
+.animation-toggle button.active:hover {
+    background: #2980b9;
+}
+
+#soundToggle {
+    font-size: 14px;
+    min-width: 32px;
+}
+
+#soundToggle.active {
+    background: #27ae60;
+    border-color: #1e8449;
+}
+
+#soundToggle.active:hover {
+    background: #1e8449;
+}
+
+#crosshairToggle {
+    font-size: 12px;
+}
+
+#crosshairToggle.active {
+    background: #e74c3c;
+    border-color: #c0392b;
+}
+
+#crosshairToggle.active:hover {
+    background: #c0392b;
+}
+
+/* ============================================
+   USTABILT SIKTEKORS
+   ============================================ */
+
+.crosshair-active {
+    cursor: none !important;
+}
+
+.crosshair-active * {
+    cursor: none !important;
+}
+
+.crosshair {
+    position: fixed;
+    width: 40px;
+    height: 40px;
+    pointer-events: none;
+    z-index: 9999;
+    transform: translate(-50%, -50%);
+    transition: none;
+}
+
+.crosshair-circle {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border: 2px solid rgba(0, 0, 0, 0.7);
+    border-radius: 50%;
+    box-sizing: border-box;
+}
+
+.crosshair-circle::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: -4px;
+    right: -4px;
+    height: 2px;
+    background: rgba(0, 0, 0, 0.7);
+    transform: translateY(-50%);
+}
+
+.crosshair-circle::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: -4px;
+    bottom: -4px;
+    width: 2px;
+    background: rgba(0, 0, 0, 0.7);
+    transform: translateX(-50%);
+}
+
+.crosshair-dot {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background: red;
+    border-radius: 50%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+/* Bom-effekt */
+.miss-effect {
+    position: fixed;
+    pointer-events: none;
+    z-index: 9998;
+    font-size: 24px;
+    font-weight: bold;
+    color: #cc0000;
+    text-shadow: 2px 2px 0 white, -2px -2px 0 white, 2px -2px 0 white, -2px 2px 0 white;
+    animation: miss-float 1s ease-out forwards;
+    font-family: 'Comic Sans MS', cursive, sans-serif;
+}
+
+@keyframes miss-float {
+    0% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(0.5) rotate(-10deg);
+    }
+    50% {
+        opacity: 1;
+        transform: translate(-50%, -100%) scale(1.2) rotate(5deg);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(-50%, -150%) scale(1) rotate(-5deg);
+    }
+}
+
+/* Røykpuff ved bom */
+.smoke-puff {
+    position: fixed;
+    width: 30px;
+    height: 30px;
+    pointer-events: none;
+    z-index: 9997;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(150,150,150,0.8) 0%, rgba(100,100,100,0.4) 50%, transparent 70%);
+    animation: smoke-dissipate 0.6s ease-out forwards;
+}
+
+@keyframes smoke-dissipate {
+    0% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(0.3);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(2);
+    }
+}
