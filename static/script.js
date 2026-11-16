@@ -721,7 +721,13 @@ function isNamedPerson(name) {
     const value = (name || '').trim();
     if (!value) return false;
     const lower = value.toLowerCase();
-    return lower !== 'ikke satt' && lower !== 'ledig';
+    const nonPersonValues = [
+        'ikke satt', 'ledig', 'uavklart',
+        'storvilt', 'storviltprøve', 'jeger',
+        'dfs', 'pistol', 'prs', 'leirdue',
+        'annet', 'åpen for alle', '100m', '200m'
+    ];
+    return !nonPersonValues.includes(lower);
 }
 
 function parseStaffing(item) {

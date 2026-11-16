@@ -734,7 +734,13 @@ def parse_staffing(item):
             vakt = name
 
     officer = (item.get('rangeOfficer') or '').strip()
-    if not standplassleder and officer and officer.lower() not in ('ikke satt', 'ledig'):
+    non_person_values = {
+        'ikke satt', 'ledig', 'uavklart',
+        'storvilt', 'storviltprøve', 'jeger',
+        'dfs', 'pistol', 'prs', 'leirdue',
+        'annet', 'åpen for alle', '100m', '200m'
+    }
+    if not standplassleder and officer and officer.lower() not in non_person_values:
         standplassleder = officer
     return {
         'standplassleder': standplassleder,
