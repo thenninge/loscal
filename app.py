@@ -708,6 +708,44 @@ def mark_synced(scope):
         conn.close()
 
 
+def parse_staffing(item):
+    comment = re.sub(
+        r'^Importert fra Lorenskog Skytterlag:\s*',
+        '',
+        item.get('comment') or '',
+        flags=re.IGNORECASE
+    )
+    standplassleder = None
+    vakt = None
+    for part in [piece.strip() for piece in comment.split(',') if piece.strip()]:
+        lower = part.lower()
+        is_ledig = bool(re.search(r'\bledig\b', lower))
+        is_stand = 'standplassleder' in lower
+        is_vakt = 'vakt standplass' in lower and not is_stand
+        name = None
+        match = re.match(r'^(.+?)\s+-\s+(.+)$', part)
+        if match:
+            left = match.group(1).strip()
+            if left.lower() != 'ledig' and not re.match(r'^(standplassleder|vakt)\b', left, re.IGNORECASE):
+                name = left
+        if is_stand and not is_ledig and name:
+            standplassleder = name
+        elif is_vakt and not is_ledig and name:
+            vakt = name
+
+    officer = (item.get('rangeOfficer') or '').strip()
+    if not standplassleder and officer and officer.lower() not in ('ikke satt', 'ledig'):
+        standplassleder = officer
+    return {
+        'standplassleder': standplassleder,
+        'vakt': vakt
+    }
+
+
+def is_slot_staffed(item):
+    return bool(parse_staffing(item).get('standplassleder'))
+
+
 def fetch_next_opening(after_dt):
     conn = get_db_connection()
     if not conn:
@@ -723,18 +761,24 @@ def fetch_next_opening(after_dt):
                 WHERE date > {placeholder}
                    OR (date = {placeholder} AND startTime > {placeholder})
                 ORDER BY date, startTime
-                LIMIT 1''',
+                LIMIT 30''',
             (date_str, date_str, time_str)
         )
-        row = cursor.fetchone()
-        return map_activity_row(row) if row else None
+        for row in cursor.fetchall():
+            item = map_activity_row(row)
+            if is_slot_staffed(item):
+                return item
+        return None
     finally:
         conn.close()
 
 
-def has_remaining_today_slots(activities, now):
+def has_remaining_staffed_today(activities, now):
     now_time = now.strftime('%H:%M')
-    return any((item.get('endTime') or '') >= now_time for item in activities)
+    return any(
+        (item.get('endTime') or '') >= now_time and is_slot_staffed(item)
+        for item in activities
+    )
 
 
 def import_calendar_range(from_date, to_date, auto_categorize=True):
@@ -851,7 +895,7 @@ def get_today():
 
         today_stale = not is_sync_fresh(f'today:{today}')
         activities = fetch_activities_for_date(today)
-        remaining = has_remaining_today_slots(activities, now)
+        remaining = has_remaining_staffed_today(activities, now)
         week_stale = (not remaining) and (not is_sync_fresh(f'week:{today}'))
 
         if want_sync and today_stale:
@@ -859,7 +903,7 @@ def get_today():
             mark_synced(f'today:{today}')
             refreshed = True
             activities = fetch_activities_for_date(today)
-            remaining = has_remaining_today_slots(activities, now)
+            remaining = has_remaining_staffed_today(activities, now)
             week_stale = (not remaining) and (not is_sync_fresh(f'week:{today}'))
 
         if want_sync and week_stale:
@@ -1251,7 +1295,7 @@ def determine_activity_types(summary, day_of_week=None, auto_categorize=True):
 
 def extract_range_officer(summary):
     """Extract range officer from summary"""
-    match = re.match(r'^(.+?)\s*-\s*(.+)$', summary)
+    match = re.match(r'^(.+?)\s+-\s+(.+)$', summary)
     if not match:
         return 'Ikke satt'
 

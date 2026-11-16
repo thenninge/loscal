@@ -530,6 +530,11 @@ body {
     border-color: #e2e8f0;
 }
 
+.today-hero.unstaffed {
+    background: #fff7ed;
+    border-color: #fdba74;
+}
+
 .today-hero.loading {
     background: #f1f5f9;
     border-color: #cbd5e1;
@@ -563,13 +568,28 @@ body {
     color: #475569;
 }
 
+.today-hero.unstaffed .today-status {
+    color: #c2410c;
+    font-size: 1.55rem;
+    line-height: 1.25;
+}
+
 .today-substatus,
 .today-who,
 .today-ranges,
-.today-officer {
+.today-officer,
+.today-staff {
     color: #334155;
     font-size: 1.15rem;
     margin-top: 0.3rem;
+}
+
+.today-staff.set {
+    color: #0f172a;
+}
+
+.today-staff.vacant {
+    color: #b45309;
 }
 
 .today-simple-slot {

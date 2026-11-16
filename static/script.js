@@ -717,6 +717,71 @@ function formatAudience(activities) {
     };
 }
 
+function isNamedPerson(name) {
+    const value = (name || '').trim();
+    if (!value) return false;
+    const lower = value.toLowerCase();
+    return lower !== 'ikke satt' && lower !== 'ledig';
+}
+
+function parseStaffing(item) {
+    const comment = (item.comment || '').replace(/^Importert fra Lorenskog Skytterlag:\s*/i, '');
+    let standplassleder = null;
+    let vakt = null;
+
+    comment.split(',').map(part => part.trim()).filter(Boolean).forEach(part => {
+        const lower = part.toLowerCase();
+        const isLedig = /\bledig\b/.test(lower);
+        const isStand = lower.includes('standplassleder');
+        const isVakt = lower.includes('vakt standplass') && !isStand;
+        let name = null;
+        const match = part.match(/^(.+?)\s+-\s+(.+)$/);
+        if (match) {
+            const left = match[1].trim();
+            if (isNamedPerson(left) && !/^(standplassleder|vakt)\b/i.test(left)) {
+                name = left;
+            }
+        }
+        if (isStand && !isLedig && name) {
+            standplassleder = name;
+        } else if (isVakt && !isLedig && name) {
+            vakt = name;
+        }
+    });
+
+    if (!standplassleder && isNamedPerson(item.rangeOfficer)) {
+        standplassleder = item.rangeOfficer.trim();
+    }
+
+    return { standplassleder, vakt };
+}
+
+function isSlotStaffed(item) {
+    return Boolean(parseStaffing(item).standplassleder);
+}
+
+function staffingHtml(item) {
+    const staff = parseStaffing(item);
+    const standText = staff.standplassleder || 'ikke bemannet';
+    const vaktText = staff.vakt || 'ikke bemannet';
+    return `
+        <p class="today-staff ${staff.standplassleder ? 'set' : 'vacant'}">Standplassleder: ${standText}</p>
+        <p class="today-staff ${staff.vakt ? 'set' : 'vacant'}">Vakt: ${vaktText}</p>
+    `;
+}
+
+function slotDetailsHtml(slot) {
+    const info = formatAudience(slot.activities);
+    return `
+        <div class="today-simple-slot">
+            <p class="today-time">${slot.startTime}–${slot.endTime}</p>
+            <p class="today-who">${info.who}</p>
+            ${info.ranges ? `<p class="today-ranges">${info.ranges}</p>` : ''}
+            ${staffingHtml(slot)}
+        </div>
+    `;
+}
+
 function slotStartDate(item) {
     const date = new Date(`${item.date}T00:00:00`);
     return parseTimeOnDate(date, item.startTime);
@@ -725,9 +790,13 @@ function slotStartDate(item) {
 function findNextOpening(now) {
     const upcoming = (openingHours || [])
         .filter(item => item && item.date && item.startTime)
-        .filter(item => slotStartDate(item) > now)
+        .filter(item => isSlotStaffed(item) && slotStartDate(item) > now)
         .sort((a, b) => slotStartDate(a) - slotStartDate(b));
-    return upcoming[0] || todayNextOpening;
+    if (upcoming[0]) return upcoming[0];
+    if (todayNextOpening && isSlotStaffed(todayNextOpening) && slotStartDate(todayNextOpening) > now) {
+        return todayNextOpening;
+    }
+    return null;
 }
 
 function formatOpeningDay(item) {
@@ -740,9 +809,6 @@ function nextOpeningHtml(now) {
     const next = findNextOpening(now);
     if (!next) return '';
     const info = formatAudience(next.activities);
-    const officer = next.rangeOfficer && next.rangeOfficer !== 'Ikke satt'
-        ? next.rangeOfficer
-        : '';
     return `
         <div class="today-next">
             <p class="today-next-label">Neste åpning</p>
@@ -750,7 +816,7 @@ function nextOpeningHtml(now) {
             <p class="today-time">${next.startTime}–${next.endTime}</p>
             <p class="today-who">${info.who}</p>
             ${info.ranges ? `<p class="today-ranges">${info.ranges}</p>` : ''}
-            ${officer ? `<p class="today-officer">${officer}</p>` : ''}
+            ${staffingHtml(next)}
         </div>
     `;
 }
@@ -775,54 +841,52 @@ function renderToday(options = {}) {
     }
 
     const slots = getTodayActivities();
-    if (slots.length === 0) {
-        const nextHtml = nextOpeningHtml(now);
+    const remaining = slots.filter(slot => getSlotState(slot, now) !== 'past');
+    const staffedSlots = remaining.filter(isSlotStaffed);
+    const nextHtml = nextOpeningHtml(now);
+
+    if (remaining.length === 0) {
+        let reason = '';
+        if (slots.length && !nextHtml) {
+            reason = '<p class="today-substatus">Dagens økter er over.</p>';
+        } else if (!slots.length && !nextHtml) {
+            reason = '<p class="today-substatus">Ingen åpningstid i dag.</p>';
+        }
         container.innerHTML = `
             <div class="today-hero closed">
                 <p class="today-date">${headingDate}</p>
                 <h2 class="today-status">Stengt</h2>
-                ${nextHtml || '<p class="today-substatus">Ingen åpningstid i dag.</p>'}
+                ${reason}
+                ${nextHtml}
             </div>
         `;
         return;
     }
 
-    const states = slots.map(slot => getSlotState(slot, now));
-    const visibleSlots = slots.filter((_, index) => states[index] !== 'past');
-    const displaySlots = visibleSlots.length ? visibleSlots : [];
-    const heroClass = displaySlots.some(slot => getSlotState(slot, now) === 'open')
-        ? 'open'
-        : displaySlots.length
-            ? 'upcoming'
-            : 'closed';
-
-    let statusText = 'Stengt';
-    if (heroClass === 'open') {
-        statusText = 'Åpen';
-    } else if (heroClass === 'upcoming') {
-        statusText = `Åpner ${displaySlots[0].startTime}`;
-    }
-
-    const slotHtml = displaySlots.map(slot => {
-        const info = formatAudience(slot.activities);
-        const officer = slot.rangeOfficer && slot.rangeOfficer !== 'Ikke satt'
-            ? slot.rangeOfficer
-            : '';
-        return `
-            <div class="today-simple-slot">
-                <p class="today-time">${slot.startTime}–${slot.endTime}</p>
-                <p class="today-who">${info.who}</p>
-                ${info.ranges ? `<p class="today-ranges">${info.ranges}</p>` : ''}
-                ${officer ? `<p class="today-officer">${officer}</p>` : ''}
+    if (staffedSlots.length === 0) {
+        container.innerHTML = `
+            <div class="today-hero unstaffed">
+                <p class="today-date">${headingDate}</p>
+                <h2 class="today-status">Stengt – i påvente av standplassleder</h2>
+                ${remaining.map(slotDetailsHtml).join('')}
+                ${nextHtml}
             </div>
         `;
-    }).join('');
+        return;
+    }
+
+    const heroClass = staffedSlots.some(slot => getSlotState(slot, now) === 'open')
+        ? 'open'
+        : 'upcoming';
+    const statusText = heroClass === 'open'
+        ? 'Åpen'
+        : `Åpner ${staffedSlots[0].startTime}`;
 
     container.innerHTML = `
         <div class="today-hero ${heroClass}">
             <p class="today-date">${headingDate}</p>
             <h2 class="today-status">${statusText}</h2>
-            ${slotHtml || nextOpeningHtml(now) || '<p class="today-substatus">Dagens økter er over.</p>'}
+            ${remaining.map(slotDetailsHtml).join('')}
         </div>
     `;
 }
