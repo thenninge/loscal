@@ -28,9 +28,14 @@
             <button id="newWeatherBtn" class="btn btn-secondary" title="Lokal værmelding" onclick="openLocalWeather()" style="background-color: #FFA500;">
                 <i class="fas fa-cloud-sun" style="color: white;"></i>
             </button>
-            <button id="viewToggle" class="btn btn-secondary">
-                <i class="fas fa-list"></i> Liste
-            </button>
+            <div class="view-mode-group">
+                <button id="todayBtn" class="btn btn-secondary view-mode-btn active" title="Vis i dag">
+                    <i class="fas fa-clock"></i> I dag
+                </button>
+                <button id="viewToggle" class="btn btn-secondary view-mode-btn" title="Bytt mellom liste og kalender for neste uke">
+                    <i class="fas fa-list"></i> Liste
+                </button>
+            </div>
             <button id="adminBtn" class="btn btn-admin">
                 <i class="fas fa-cog"></i>
             </button>
@@ -54,14 +59,14 @@
         </header>
 
         <!-- Update Section -->
-        <section class="update-section">
+        <section class="update-section hidden">
             <button id="updateSevenDaysBtn" class="btn btn-primary">
                 <i class="fas fa-sync-alt"></i> Oppdater for neste 7 dager
             </button>
         </section>
 
         <!-- Filter Section -->
-        <section class="filters">
+        <section class="filters hidden">
             <div class="filter-header">
                 <h3>Filtrer aktiviteter:</h3>
                 <div class="filter-controls">
@@ -145,8 +150,13 @@
 
         <!-- Main Content -->
         <main class="main-content">
+            <!-- Today View -->
+            <div id="todayView" class="view active">
+                <div id="todayContent" class="today-container"></div>
+            </div>
+
             <!-- List View -->
-            <div id="listView" class="view active">
+            <div id="listView" class="view">
                 <div class="list-container">
                     <!-- Items will be populated by JavaScript -->
                 </div>

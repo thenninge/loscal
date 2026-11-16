@@ -132,6 +132,18 @@ def init_db():
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             ''')
+
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS calendar_sync (
+                scope VARCHAR(64) PRIMARY KEY,
+                synced_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''' if IS_VERCEL else '''
+            CREATE TABLE IF NOT EXISTS calendar_sync (
+                scope TEXT PRIMARY KEY,
+                synced_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
         
         # Add source column if it doesn't exist (migration)
         try:
@@ -589,6 +601,240 @@ def delete_activity(activity_id):
     
     return jsonify({'success': True})
 
+TODAY_SYNC_MAX_AGE = timedelta(minutes=15)
+
+
+def oslo_today():
+    return datetime.now(OSLO_TZ).strftime('%Y-%m-%d')
+
+
+def map_activity_row(row):
+    activities_data = row[6]
+    if isinstance(activities_data, str):
+        activities_data = json.loads(activities_data)
+    elif activities_data is None:
+        activities_data = []
+
+    colors_data = row[7]
+    if isinstance(colors_data, str):
+        colors_data = json.loads(colors_data)
+    elif colors_data is None:
+        colors_data = []
+
+    return {
+        'id': row[0],
+        'iCalUID': row[1],
+        'date': row[2],
+        'dayOfWeek': row[3],
+        'startTime': row[4],
+        'endTime': row[5],
+        'activities': activities_data,
+        'colors': colors_data,
+        'comment': row[8],
+        'rangeOfficer': row[9],
+        'source': row[10] if len(row) > 10 else 'manual'
+    }
+
+
+def fetch_activities_for_date(date_str):
+    conn = get_db_connection()
+    if not conn:
+        return []
+    try:
+        cursor = conn.cursor()
+        placeholder = get_placeholder()
+        cursor.execute(
+            f'''SELECT id, iCalUID, date, dayOfWeek, startTime, endTime, activities, colors, comment, rangeOfficer, source
+                FROM activities WHERE date = {placeholder} ORDER BY startTime''',
+            (date_str,)
+        )
+        return [map_activity_row(row) for row in cursor.fetchall()]
+    finally:
+        conn.close()
+
+
+def is_today_sync_fresh():
+    today = oslo_today()
+    conn = get_db_connection()
+    if not conn:
+        return False
+    try:
+        cursor = conn.cursor()
+        placeholder = get_placeholder()
+        cursor.execute(
+            f'SELECT synced_at FROM calendar_sync WHERE scope = {placeholder}',
+            (f'today:{today}',)
+        )
+        row = cursor.fetchone()
+        if not row or not row[0]:
+            return False
+        synced_at = row[0]
+        if isinstance(synced_at, str):
+            synced_at = datetime.fromisoformat(synced_at.replace('Z', ''))
+        if getattr(synced_at, 'tzinfo', None) is None:
+            synced_at = synced_at.replace(tzinfo=timezone.utc)
+        return datetime.now(timezone.utc) - synced_at.astimezone(timezone.utc) < TODAY_SYNC_MAX_AGE
+    except Exception as e:
+        print(f"Freshness check failed: {e}")
+        return False
+    finally:
+        conn.close()
+
+
+def mark_today_synced():
+    today = oslo_today()
+    conn = get_db_connection()
+    if not conn:
+        return
+    try:
+        cursor = conn.cursor()
+        placeholder = get_placeholder()
+        scope = f'today:{today}'
+        if IS_VERCEL:
+            cursor.execute(
+                f'''INSERT INTO calendar_sync (scope, synced_at)
+                    VALUES ({placeholder}, CURRENT_TIMESTAMP)
+                    ON CONFLICT (scope) DO UPDATE SET synced_at = CURRENT_TIMESTAMP''',
+                (scope,)
+            )
+        else:
+            cursor.execute(
+                'INSERT OR REPLACE INTO calendar_sync (scope, synced_at) VALUES (?, CURRENT_TIMESTAMP)',
+                (scope,)
+            )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def import_calendar_range(from_date, to_date, auto_categorize=True):
+    response = requests.get(
+        SMARTPLAN_ICAL_URL,
+        timeout=15,
+        headers={
+            'User-Agent': 'LosbyKalender/1.0',
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache',
+        }
+    )
+    response.raise_for_status()
+    response.encoding = 'utf-8'
+    ical_data = response.text
+    if 'BEGIN:VEVENT' not in ical_data:
+        raise ValueError('Kalenderfeeden inneholdt ingen hendelser')
+
+    events = parse_ical_data(ical_data, from_date, to_date, auto_categorize)
+    print(f"Import: {len(events)} aktiviteter i perioden {from_date}–{to_date}")
+
+    init_db()
+    conn = get_db_connection()
+    if not conn:
+        raise RuntimeError('Database connection failed')
+
+    cursor = conn.cursor()
+    placeholder = get_placeholder()
+    imported_count = 0
+    skipped_manual = 0
+
+    try:
+        cursor.execute(
+            f'SELECT date, startTime, endTime FROM activities WHERE source = {placeholder} AND date >= {placeholder} AND date <= {placeholder}',
+            ('manual', from_date, to_date)
+        )
+        manual_slots = {(row[0], row[1], row[2]) for row in cursor.fetchall()}
+
+        events_to_save = [
+            event for event in events
+            if (event['date'], event['startTime'], event['endTime']) not in manual_slots
+        ]
+        skipped_manual = len(events) - len(events_to_save)
+
+        cursor.execute(
+            f'DELETE FROM activities WHERE source = {placeholder} AND date >= {placeholder} AND date <= {placeholder}',
+            ('imported', from_date, to_date)
+        )
+
+        insert_sql = '''
+            INSERT INTO activities (id, iCalUID, date, dayOfWeek, startTime, endTime,
+                                  activities, colors, comment, rangeOfficer, source, created_at, updated_at)
+            VALUES ({ph}, {ph}, {ph}, {ph}, {ph}, {ph}, {ph}, {ph}, {ph}, {ph}, {ph}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+        '''.format(ph=placeholder)
+        if IS_VERCEL:
+            insert_sql += '''
+                ON CONFLICT (id) DO UPDATE SET
+                    iCalUID = EXCLUDED.iCalUID,
+                    date = EXCLUDED.date,
+                    dayOfWeek = EXCLUDED.dayOfWeek,
+                    startTime = EXCLUDED.startTime,
+                    endTime = EXCLUDED.endTime,
+                    activities = EXCLUDED.activities,
+                    colors = EXCLUDED.colors,
+                    comment = EXCLUDED.comment,
+                    rangeOfficer = EXCLUDED.rangeOfficer,
+                    source = EXCLUDED.source,
+                    updated_at = CURRENT_TIMESTAMP
+            '''
+        else:
+            insert_sql = insert_sql.replace('INSERT INTO', 'INSERT OR REPLACE INTO', 1)
+
+        for event in events_to_save:
+            cursor.execute(insert_sql, (
+                event['id'],
+                event.get('iCalUID'),
+                event['date'],
+                event['dayOfWeek'],
+                event['startTime'],
+                event['endTime'],
+                json.dumps(event['activities']),
+                json.dumps(event['colors']),
+                event['comment'],
+                event['rangeOfficer'],
+                event['source']
+            ))
+            imported_count += 1
+
+        conn.commit()
+    except Exception:
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+        raise
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
+
+    return imported_count, skipped_manual
+
+
+@app.route('/api/today', methods=['GET'])
+def get_today():
+    try:
+        init_db()
+        today = oslo_today()
+        refreshed = False
+        if not is_today_sync_fresh():
+            import_calendar_range(today, today, True)
+            mark_today_synced()
+            refreshed = True
+        return jsonify({
+            'success': True,
+            'date': today,
+            'refreshed': refreshed,
+            'activities': fetch_activities_for_date(today)
+        })
+    except Exception as e:
+        print(f"Today endpoint error: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'error': f'Kunne ikke hente dagens åpningstider: {str(e)}'
+        }), 500
+
+
 @app.route('/api/import/calendar', methods=['POST', 'OPTIONS'])
 def import_calendar():
     if request.method == 'OPTIONS':
@@ -605,114 +851,7 @@ def import_calendar():
                 'error': 'Fra- og til-dato må være spesifisert'
             }), 400
 
-        response = requests.get(
-            SMARTPLAN_ICAL_URL,
-            timeout=15,
-            headers={
-                'User-Agent': 'LosbyKalender/1.0',
-                'Cache-Control': 'no-cache',
-                'Pragma': 'no-cache',
-            }
-        )
-        response.raise_for_status()
-        response.encoding = 'utf-8'
-        ical_data = response.text
-        if 'BEGIN:VEVENT' not in ical_data:
-            return jsonify({
-                'success': False,
-                'error': 'Kalenderfeeden inneholdt ingen hendelser'
-            }), 502
-
-        events = parse_ical_data(ical_data, from_date, to_date, auto_categorize)
-        print(f"Import: {len(events)} aktiviteter i perioden {from_date}–{to_date}")
-
-        init_db()
-        conn = get_db_connection()
-        if not conn:
-            return jsonify({
-                'success': False,
-                'error': 'Database connection failed'
-            }), 500
-
-        cursor = conn.cursor()
-        placeholder = get_placeholder()
-        imported_count = 0
-        skipped_manual = 0
-
-        try:
-            cursor.execute(
-                f'SELECT date, startTime, endTime FROM activities WHERE source = {placeholder} AND date >= {placeholder} AND date <= {placeholder}',
-                ('manual', from_date, to_date)
-            )
-            manual_slots = {(row[0], row[1], row[2]) for row in cursor.fetchall()}
-
-            events_to_save = []
-            for event in events:
-                if (event['date'], event['startTime'], event['endTime']) in manual_slots:
-                    skipped_manual += 1
-                    continue
-                events_to_save.append(event)
-
-            cursor.execute(
-                f'DELETE FROM activities WHERE source = {placeholder} AND date >= {placeholder} AND date <= {placeholder}',
-                ('imported', from_date, to_date)
-            )
-
-            insert_sql = '''
-                INSERT INTO activities (id, iCalUID, date, dayOfWeek, startTime, endTime,
-                                      activities, colors, comment, rangeOfficer, source, created_at, updated_at)
-                VALUES ({ph}, {ph}, {ph}, {ph}, {ph}, {ph}, {ph}, {ph}, {ph}, {ph}, {ph}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-            '''.format(ph=placeholder)
-            if IS_VERCEL:
-                insert_sql += '''
-                    ON CONFLICT (id) DO UPDATE SET
-                        iCalUID = EXCLUDED.iCalUID,
-                        date = EXCLUDED.date,
-                        dayOfWeek = EXCLUDED.dayOfWeek,
-                        startTime = EXCLUDED.startTime,
-                        endTime = EXCLUDED.endTime,
-                        activities = EXCLUDED.activities,
-                        colors = EXCLUDED.colors,
-                        comment = EXCLUDED.comment,
-                        rangeOfficer = EXCLUDED.rangeOfficer,
-                        source = EXCLUDED.source,
-                        updated_at = CURRENT_TIMESTAMP
-                '''
-            else:
-                insert_sql = insert_sql.replace('INSERT INTO', 'INSERT OR REPLACE INTO', 1)
-
-            for event in events_to_save:
-                cursor.execute(insert_sql, (
-                    event['id'],
-                    event.get('iCalUID'),
-                    event['date'],
-                    event['dayOfWeek'],
-                    event['startTime'],
-                    event['endTime'],
-                    json.dumps(event['activities']),
-                    json.dumps(event['colors']),
-                    event['comment'],
-                    event['rangeOfficer'],
-                    event['source']
-                ))
-                imported_count += 1
-
-            conn.commit()
-        except Exception as e:
-            try:
-                conn.rollback()
-            except Exception:
-                pass
-            print(f"Database error during import: {str(e)}")
-            import traceback
-            traceback.print_exc()
-            raise e
-        finally:
-            try:
-                conn.close()
-            except Exception:
-                pass
-
+        imported_count, skipped_manual = import_calendar_range(from_date, to_date, auto_categorize)
         message = f'{imported_count} aktiviteter importert/oppdatert' if imported_count else 'Ingen endringer'
         if skipped_manual:
             message += f' ({skipped_manual} hoppet over pga. manuelle aktiviteter)'

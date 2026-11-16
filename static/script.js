@@ -1,5 +1,5 @@
 // App state
-let currentView = 'list';
+let currentView = 'today';
 let currentMonth = new Date();
 let isAdmin = false;
 let adminPin = '1234'; // Default PIN - should be configurable
@@ -77,8 +77,7 @@ async function updateNextSevenDays() {
         const importResult = await importResponse.json();
         
         await loadData();
-        renderList();
-        renderCalendar();
+        refreshViews();
         
         button.innerHTML = '<i class="fas fa-check"></i> Oppdatert!';
         button.style.backgroundColor = '#28a745';
@@ -281,16 +280,12 @@ const dayNames = ['Mandag', 'Tirsdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lørdag',
 
 // Initialize app
 document.addEventListener('DOMContentLoaded', async function() {
-    await loadData();
     setupEventListeners();
-    
-    // Set initial view to list
-    document.getElementById('listView').classList.add('active');
-    document.getElementById('calendarView').classList.remove('active');
-    
-    renderList();
-    renderCalendar();
-    updateViewToggle();
+    switchView('today');
+    renderToday({ loading: true });
+    await ensureTodayData();
+    await loadData();
+    refreshViews();
     
     // Debug: Add button to clear localStorage if needed
     if (window.location.search.includes('debug')) {
@@ -392,8 +387,8 @@ async function saveData() {
 
 // Event listeners
 function setupEventListeners() {
-    // View toggle
-    document.getElementById('viewToggle').addEventListener('click', toggleView);
+    document.getElementById('todayBtn').addEventListener('click', () => switchView('today'));
+    document.getElementById('viewToggle').addEventListener('click', toggleWeekView);
     
     // Update seven days button
     document.getElementById('updateSevenDaysBtn').addEventListener('click', updateNextSevenDays);
@@ -532,28 +527,188 @@ function setupEventListeners() {
 
 }
 
-// View management
-function toggleView() {
-    currentView = currentView === 'list' ? 'calendar' : 'list';
-    
-    document.getElementById('listView').classList.toggle('active', currentView === 'list');
-    document.getElementById('calendarView').classList.toggle('active', currentView === 'calendar');
-    
+function refreshViews() {
+    renderToday();
+    renderList();
+    renderCalendar();
+}
+
+function switchView(view) {
+    currentView = view;
+
+    document.getElementById('todayView').classList.toggle('active', view === 'today');
+    document.getElementById('listView').classList.toggle('active', view === 'list');
+    document.getElementById('calendarView').classList.toggle('active', view === 'calendar');
+
+    document.getElementById('todayBtn').classList.toggle('active', view === 'today');
     updateViewToggle();
-    
-    // Oppdater view med aktuelle filtre når man bytter view
+
+    const isToday = view === 'today';
+    const filters = document.querySelector('.filters');
+    if (filters) {
+        filters.classList.toggle('hidden', isToday);
+    }
+
+    const updateSection = document.querySelector('.update-section');
+    if (updateSection) {
+        updateSection.classList.toggle('hidden', isToday);
+    }
+
     filterData();
+}
+
+function toggleWeekView() {
+    if (currentView === 'today') {
+        switchView('list');
+        return;
+    }
+    switchView(currentView === 'list' ? 'calendar' : 'list');
 }
 
 function updateViewToggle() {
     const button = document.getElementById('viewToggle');
+    if (!button) return;
     if (currentView === 'list') {
-        // Currently in list view, button should show "Kalender" (what happens when clicked)
         button.innerHTML = '<i class="fas fa-calendar"></i> Kalender';
     } else {
-        // Currently in calendar view, button should show "Liste" (what happens when clicked)
         button.innerHTML = '<i class="fas fa-list"></i> Liste';
     }
+}
+
+async function ensureTodayData() {
+    try {
+        const response = await fetch('/api/today');
+        if (!response.ok) {
+            throw new Error('Kunne ikke sjekke dagens åpningstider');
+        }
+        await response.json();
+    } catch (error) {
+        console.error('ensureTodayData:', error);
+    }
+}
+
+function getTodayDateString() {
+    return toLocalISODate(new Date());
+}
+
+function getTodayActivities() {
+    const today = getTodayDateString();
+    return (openingHours || [])
+        .filter(item => item.date === today)
+        .sort((a, b) => (a.startTime || '').localeCompare(b.startTime || ''));
+}
+
+function parseTimeOnDate(baseDate, timeStr) {
+    const [hours, minutes] = (timeStr || '00:00').split(':').map(Number);
+    const parsed = new Date(baseDate);
+    parsed.setHours(hours || 0, minutes || 0, 0, 0);
+    return parsed;
+}
+
+function getSlotState(item, now) {
+    const start = parseTimeOnDate(now, item.startTime);
+    const end = parseTimeOnDate(now, item.endTime);
+    if (now < start) return 'upcoming';
+    if (now <= end) return 'open';
+    return 'past';
+}
+
+function splitAudienceAndRanges(activities) {
+    const ranges = [];
+    const audience = [];
+    (activities || []).forEach(activity => {
+        if (activity === '100m' || activity === '200m') {
+            ranges.push(activity);
+        } else {
+            audience.push(activity);
+        }
+    });
+    return { audience, ranges };
+}
+
+function activityBadgeHtml(activity, color) {
+    return `<span class="activity-badge ${activity}" style="background-color: ${color || '#6B7280'}">${activity}</span>`;
+}
+
+function formatAudience(activities) {
+    const { audience, ranges } = splitAudienceAndRanges(activities);
+    const who = [...new Set(audience.filter(item => item && item !== 'Uavklart'))];
+    const uniqueRanges = [...new Set(ranges)];
+    return {
+        who: who.length ? who.join(', ') : 'Ikke avklart',
+        ranges: uniqueRanges.join(' og ')
+    };
+}
+
+function renderToday(options = {}) {
+    const container = document.getElementById('todayContent');
+    if (!container) return;
+
+    const now = new Date();
+    const weekday = dayNames[(now.getDay() + 6) % 7];
+    const headingDate = `${weekday} ${now.getDate()}. ${monthNames[now.getMonth()].toLowerCase()}`;
+
+    if (options.loading) {
+        container.innerHTML = `
+            <div class="today-hero loading">
+                <p class="today-date">${headingDate}</p>
+                <h2 class="today-status">Sjekker åpningstider…</h2>
+                <p class="today-substatus">Henter oppdaterte data for i dag.</p>
+            </div>
+        `;
+        return;
+    }
+
+    const slots = getTodayActivities();
+    if (slots.length === 0) {
+        container.innerHTML = `
+            <div class="today-hero closed">
+                <p class="today-date">${headingDate}</p>
+                <h2 class="today-status">Stengt</h2>
+                <p class="today-substatus">Ingen åpningstid i dag.</p>
+            </div>
+        `;
+        return;
+    }
+
+    const states = slots.map(slot => getSlotState(slot, now));
+    const visibleSlots = slots.filter((_, index) => states[index] !== 'past');
+    const displaySlots = visibleSlots.length ? visibleSlots : [];
+    const heroClass = displaySlots.some(slot => getSlotState(slot, now) === 'open')
+        ? 'open'
+        : displaySlots.length
+            ? 'upcoming'
+            : 'closed';
+
+    let statusText = 'Stengt';
+    if (heroClass === 'open') {
+        statusText = 'Åpen';
+    } else if (heroClass === 'upcoming') {
+        statusText = `Åpner ${displaySlots[0].startTime}`;
+    }
+
+    const slotHtml = displaySlots.map(slot => {
+        const info = formatAudience(slot.activities);
+        const officer = slot.rangeOfficer && slot.rangeOfficer !== 'Ikke satt'
+            ? slot.rangeOfficer
+            : '';
+        return `
+            <div class="today-simple-slot">
+                <p class="today-time">${slot.startTime}–${slot.endTime}</p>
+                <p class="today-who">${info.who}</p>
+                ${info.ranges ? `<p class="today-ranges">${info.ranges}</p>` : ''}
+                ${officer ? `<p class="today-officer">${officer}</p>` : ''}
+            </div>
+        `;
+    }).join('');
+
+    container.innerHTML = `
+        <div class="today-hero ${heroClass}">
+            <p class="today-date">${headingDate}</p>
+            <h2 class="today-status">${statusText}</h2>
+            ${slotHtml || '<p class="today-substatus">Dagens økter er over.</p>'}
+        </div>
+    `;
 }
 
 // List view rendering
@@ -888,7 +1043,9 @@ function getFilteredData() {
 }
 
 function filterData() {
-    if (currentView === 'list') {
+    if (currentView === 'today') {
+        renderToday();
+    } else if (currentView === 'list') {
         renderList();
     } else {
         renderCalendar();
@@ -1088,12 +1245,7 @@ function updateUIForAdminMode() {
         }
     }
     
-    // Re-render current view to show/hide delete buttons
-    if (currentView === 'list') {
-        renderList();
-    } else {
-        renderCalendar();
-    }
+    filterData();
 }
 
 function makeActivitiesEditable() {
@@ -1236,8 +1388,7 @@ async function confirmScrape() {
         saveData();
         
         // Re-render views
-        renderList();
-        renderCalendar();
+        refreshViews();
         updateActivityCounter();
         
         alert(`Suksess! ${newActivities.length} nye aktiviteter lagt til fra Lorenskog Skytterlag kalender.\nTidsrom: ${today.toLocaleDateString('no-NO')} - ${nextWeek.toLocaleDateString('no-NO')}`);
@@ -1484,8 +1635,7 @@ async function startImport() {
             console.log('startImport: Reloading data after import...');
             await loadData();
             console.log('startImport: Data reloaded, rendering views...');
-            renderList();
-            renderCalendar();
+            refreshViews();
             updateActivityCounter();
             
             // Update empty database message
@@ -1552,8 +1702,7 @@ async function removeDuplicates() {
         if (response.ok) {
             // Reload data from server
             await loadData();
-            renderList();
-            renderCalendar();
+            refreshViews();
             updateActivityCounter();
             
             // Update result
@@ -1702,8 +1851,7 @@ async function addNewOpening(e) {
                 
                 resetEditForm();
                 closeAdminModal();
-                renderList();
-                renderCalendar();
+                refreshViews();
                 
                 const formattedDate = new Date(date).toLocaleDateString('no-NO', {
                     day: '2-digit',
@@ -1752,8 +1900,7 @@ async function addNewOpening(e) {
             closeAdminModal();
             
             // Re-render views
-            renderList();
-            renderCalendar();
+            refreshViews();
             
             // Bedre feedback
             const formattedDate = new Date(date).toLocaleDateString('no-NO', {
@@ -1831,8 +1978,7 @@ async function deleteActivity() {
                 
                 resetEditForm();
                 closeAdminModal();
-                renderList();
-                renderCalendar();
+                refreshViews();
                 updateActivityCounter();
                 
                 alert('Aktivitet slettet!');
@@ -1876,8 +2022,7 @@ async function deleteActivityById(activityId) {
             }
             
             // Update UI
-            renderList();
-            renderCalendar();
+            refreshViews();
             updateActivityCounter();
             
             // Don't show alert for successful deletion
@@ -1961,8 +2106,7 @@ async function deleteAllActivities() {
             openingHours.length = 0;
             
             // Update UI
-            renderList();
-            renderCalendar();
+            refreshViews();
             updateActivityCounter();
             
             alert('Alle aktiviteter er slettet!');
@@ -2183,8 +2327,7 @@ async function deleteImportedActivities() {
             alert(result.message);
             closeAdminModal();
             await loadData();
-            renderList();
-            renderCalendar();
+            refreshViews();
         } else {
             alert('Feil ved sletting av importerte aktiviteter: ' + result.error);
         }
@@ -2213,8 +2356,7 @@ async function deleteManualActivities() {
             alert(result.message);
             closeAdminModal();
             await loadData();
-            renderList();
-            renderCalendar();
+            refreshViews();
         } else {
             alert('Feil ved sletting av manuelle aktiviteter: ' + result.error);
         }

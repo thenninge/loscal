@@ -48,6 +48,21 @@ body {
 .header-controls {
     display: flex;
     gap: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.view-mode-group {
+    display: flex;
+    gap: 0.5rem;
+    margin-left: 0.25rem;
+    padding-left: 0.85rem;
+    border-left: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.view-mode-btn.active {
+    background: #3498db;
+    color: white;
 }
 
 /* Admin Mode Controls */
@@ -464,6 +479,166 @@ body {
 
 .view.active {
     display: block;
+}
+
+.today-container {
+    max-width: 720px;
+    margin: 0 auto;
+}
+
+.today-hero {
+    text-align: center;
+    padding: 2rem 1.5rem;
+    border-radius: 16px;
+    margin-bottom: 1.75rem;
+    border: 1px solid #e9ecef;
+}
+
+.today-hero.open {
+    background: #ecfdf5;
+    border-color: #6ee7b7;
+}
+
+.today-hero.upcoming {
+    background: #fffbeb;
+    border-color: #fcd34d;
+}
+
+.today-hero.closed {
+    background: #f8fafc;
+    border-color: #e2e8f0;
+}
+
+.today-hero.loading {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+}
+
+.today-date {
+    font-size: 0.95rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #64748b;
+    margin-bottom: 0.5rem;
+}
+
+.today-status {
+    font-size: 2.1rem;
+    font-weight: 800;
+    color: #0f172a;
+    margin-bottom: 0.4rem;
+}
+
+.today-hero.open .today-status {
+    color: #047857;
+}
+
+.today-hero.upcoming .today-status {
+    color: #b45309;
+}
+
+.today-hero.closed .today-status {
+    color: #475569;
+}
+
+.today-substatus,
+.today-who,
+.today-ranges,
+.today-officer {
+    color: #334155;
+    font-size: 1.15rem;
+    margin-top: 0.3rem;
+}
+
+.today-simple-slot {
+    margin-top: 1.25rem;
+}
+
+.today-time {
+    font-size: 1.7rem;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.today-slots-heading {
+    font-size: 1.05rem;
+    color: #2c3e50;
+    margin-bottom: 0.75rem;
+}
+
+.today-slots {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.today-slot {
+    background: white;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    border-left: 4px solid #94a3b8;
+}
+
+.today-slot.open {
+    border-left-color: #10b981;
+}
+
+.today-slot.upcoming {
+    border-left-color: #f59e0b;
+}
+
+.today-slot.past {
+    opacity: 0.7;
+}
+
+.today-slot-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.today-slot-time {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #2c3e50;
+}
+
+.today-slot-state {
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    background: #e2e8f0;
+    color: #475569;
+}
+
+.today-slot.open .today-slot-state {
+    background: #d1fae5;
+    color: #047857;
+}
+
+.today-slot.upcoming .today-slot-state {
+    background: #fef3c7;
+    color: #b45309;
+}
+
+.today-slot-who {
+    margin-bottom: 0.35rem;
+    color: #334155;
+}
+
+.today-slot-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 0.75rem;
 }
 
 /* List View */
@@ -1319,6 +1494,25 @@ body {
     
     .header h1 {
         font-size: 1.25rem;
+    }
+
+    .header-controls {
+        gap: 0.5rem;
+    }
+
+    .view-mode-group {
+        margin-left: 0;
+        padding-left: 0;
+        border-left: none;
+    }
+
+    .today-status {
+        font-size: 1.7rem;
+    }
+
+    .today-slot-top {
+        flex-direction: column;
+        align-items: flex-start;
     }
     
     .header-logo {
