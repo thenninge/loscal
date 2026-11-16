@@ -1225,8 +1225,7 @@ function updateUIForAdminMode() {
     
     if (adminMode) {
         adminControls.classList.remove('hidden');
-        adminBtn.style.background = '#b91c1c';
-        adminBtn.innerHTML = '<i class="fas fa-user-shield"></i>';
+        adminBtn.classList.add('active');
         makeActivitiesEditable();
         // Show activity counter in main view
         if (activityCounterMain) {
@@ -1236,8 +1235,7 @@ function updateUIForAdminMode() {
         }
     } else {
         adminControls.classList.add('hidden');
-        adminBtn.style.background = '#e74c3c';
-        adminBtn.innerHTML = '<i class="fas fa-cog"></i>';
+        adminBtn.classList.remove('active');
         removeEditableActivities();
         // Hide activity counter in main view
         if (activityCounterMain) {

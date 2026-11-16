@@ -52,12 +52,23 @@ body {
     flex-wrap: wrap;
 }
 
+.header-links {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
 .view-mode-group {
     display: flex;
     gap: 0.5rem;
     margin-left: 0.25rem;
     padding-left: 0.85rem;
     border-left: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.view-mode-btn {
+    justify-content: center;
+    min-width: 8.6rem;
 }
 
 .view-mode-btn.active {
@@ -161,11 +172,15 @@ body {
 /* Footer styling */
 .app-footer {
     text-align: center;
-    padding: 1rem 0;
+    padding: 1rem 0 1.25rem;
     margin-top: 2rem;
     border-top: 1px solid #2c3e50;
     background-color: white;
     width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
 }
 
 .app-footer span {
@@ -209,18 +224,24 @@ body {
 }
 
 .btn-admin {
-    background: #e74c3c;
-    color: white;
-    padding: 0.5rem;
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
+    background: #e5e7eb;
+    color: #4b5563;
+    padding: 0.35rem 0.8rem;
+    border-radius: 0;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
     justify-content: center;
 }
 
 .btn-admin:hover {
-    background: #c0392b;
-    transform: scale(1.1);
+    background: #d1d5db;
+    color: #374151;
+}
+
+.btn-admin.active {
+    background: #9ca3af;
+    color: #111827;
 }
 
 /* Facebook button styling */
@@ -1497,13 +1518,26 @@ body {
     }
 
     .header-controls {
-        gap: 0.5rem;
+        width: 100%;
+        gap: 0.75rem;
+        justify-content: center;
+    }
+
+    .header-links {
+        justify-content: center;
+        width: 100%;
     }
 
     .view-mode-group {
+        width: 100%;
         margin-left: 0;
         padding-left: 0;
         border-left: none;
+    }
+
+    .view-mode-btn {
+        flex: 1;
+        min-width: 0;
     }
 
     .today-status {
