@@ -6,6 +6,106 @@
 let currentAnimation = 'elg'; // 'elg' som standard - folk må tåle det!
 let soundEnabled = true;
 let audioContext = null;
+let fakeErrorShown = false;
+
+/* ============================================
+   FAKE FEILMELDING - PRANK INTRO
+   Ser ut som ekte feil, skjulte knapper for å fjerne
+   ============================================ */
+
+
+function showFakeError() {
+    if (fakeErrorShown) return;
+    if (sessionStorage.getItem('loscal_prank_seen')) return;
+    
+    fakeErrorShown = true;
+    
+    const container = document.getElementById('todayContent');
+    if (!container) return;
+    
+    // Lag dato-streng som vanlig
+    const now = new Date();
+    const dayNames = ['søndag', 'mandag', 'tirsdag', 'onsdag', 'torsdag', 'fredag', 'lørdag'];
+    const monthNames = ['januar', 'februar', 'mars', 'april', 'mai', 'juni', 'juli', 'august', 'september', 'oktober', 'november', 'desember'];
+    const weekday = dayNames[now.getDay()];
+    const headingDate = `${weekday} ${now.getDate()}. ${monthNames[now.getMonth()]}`;
+    
+    // Sett inn fake error - ser ut som ekte lasting-feil
+    container.innerHTML = `
+        <div class="today-hero closed" id="fakeErrorContent">
+            <p class="today-date">${headingDate}</p>
+            <h2 class="today-status">Kunne ikke laste data</h2>
+            <p class="today-substatus">Prøv å laste siden på nytt</p>
+            <p class="fake-error-code">Feilkode: API_TOKEN_MISSING<span class="blink-cursor"></span></p>
+            <div class="fake-error-actions">
+                <a href="https://www.facebook.com/groups/lorenskogskytterlag/" 
+                   target="_blank" 
+                   class="btn-fallback">
+                    Sjekk Facebook-gruppen
+                </a>
+            </div>
+        </div>
+    `;
+    
+    // Legg til skjulte knapper i header
+    addSecretButtons();
+}
+
+function addSecretButtons() {
+    const headerLinks = document.querySelector('.header-links');
+    if (!headerLinks) return;
+    
+    const wwwBtn = document.getElementById('wwwBtn');
+    const weatherBtn = document.getElementById('newWeatherBtn');
+    
+    // Skjult knapp til VENSTRE for web-knappen (første knapp)
+    const leftSecret = document.createElement('button');
+    leftSecret.className = 'secret-dismiss-btn btn btn-secondary';
+    leftSecret.type = 'button';
+    leftSecret.innerHTML = '&nbsp;';
+    leftSecret.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dismissFakeError();
+    };
+    headerLinks.insertBefore(leftSecret, wwwBtn);
+    
+    // Skjult knapp til HØYRE for vær-knappen (oransje)
+    const rightSecret = document.createElement('button');
+    rightSecret.className = 'secret-dismiss-btn btn btn-secondary';
+    rightSecret.type = 'button';
+    rightSecret.innerHTML = '&nbsp;';
+    rightSecret.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dismissFakeError();
+    };
+    headerLinks.appendChild(rightSecret);
+}
+
+
+function dismissFakeError() {
+    // Fjern skjulte knapper
+    document.querySelectorAll('.secret-dismiss-btn').forEach(el => el.remove());
+    
+    // Fjern fake error content
+    const fakeContent = document.getElementById('fakeErrorContent');
+    if (fakeContent) {
+        fakeContent.remove();
+    }
+    
+    sessionStorage.setItem('loscal_prank_seen', 'true');
+    fakeErrorShown = false;
+    
+    // Nå kan renderToday kjøre igjen - refresh views
+    if (typeof refreshViews === 'function') {
+        refreshViews();
+    }
+}
+
+function trackFacebookPrank() {
+    console.log('🎯 Noen klikket på Facebook-lenken!');
+}
 
 // Initialiser Web Audio API
 function initAudio() {
@@ -384,25 +484,47 @@ function createElgAnimation() {
 
 // Initialiser når DOM er klar
 document.addEventListener('DOMContentLoaded', function() {
-    // Vent litt så today-view er rendret
     setTimeout(() => {
         createAnimationBanner();
         
-        // Aktiver siktekors og lyd ved første klikk (browser krever interaksjon)
-        document.addEventListener('click', function startEverythingOnClick(e) {
-            // Start lyd
-            if (currentAnimation === 'elg' && soundEnabled) {
-                startElgSounds();
-            }
+        // Wrap renderToday for å blokkere den mens fake error vises
+        if (!sessionStorage.getItem('loscal_prank_seen')) {
+            const originalRenderToday = window.renderToday;
+            window.renderToday = function(options) {
+                // Hvis fake error vises, ikke gjør noe
+                if (document.getElementById('fakeErrorContent')) {
+                    return;
+                }
+                // Ellers kjør original
+                if (originalRenderToday) {
+                    originalRenderToday(options);
+                }
+            };
             
-            // Aktiver siktekors
-            if (!crosshairEnabled) {
-                toggleCrosshair();
+            // Vis fake error
+            showFakeError();
+        }
+        
+        // Start lyd og siktekors umiddelbart
+        if (currentAnimation === 'elg' && soundEnabled) {
+            startElgSounds();
+        }
+        
+        // Aktiver siktekors med en gang
+        if (!crosshairEnabled) {
+            toggleCrosshair();
+        }
+        
+        // Backup ved første klikk hvis browser blokkerte autostart
+        document.addEventListener('click', function startEverythingOnClick(e) {
+            // Start lyd hvis ikke allerede startet
+            if (currentAnimation === 'elg' && soundEnabled && !elgSoundInterval) {
+                startElgSounds();
             }
             
             document.removeEventListener('click', startEverythingOnClick);
         }, { once: true });
-    }, 100);
+    }, 50);
 });
 
 /* ============================================

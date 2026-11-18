@@ -2,6 +2,59 @@
    SKYTTERLAG ANIMASJONER
    ============================================ */
 
+/* ============================================
+   FAKE FEILMELDING - PRANK INTRO
+   Ser ut som ekte feil
+   ============================================ */
+
+.fake-error-code {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 0.8rem;
+    color: #888;
+    margin-top: 1rem;
+}
+
+.blink-cursor::after {
+    content: '_';
+    animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+}
+
+.fake-error-actions {
+    margin-top: 1.5rem;
+}
+
+.btn-fallback {
+    display: inline-block;
+    padding: 0.6rem 1.2rem;
+    background: #f0f0f0;
+    color: #333;
+    text-decoration: none;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    border: 1px solid #ddd;
+    transition: all 0.2s ease;
+}
+
+.btn-fallback:hover {
+    background: #e0e0e0;
+    border-color: #ccc;
+}
+
+/* Skjulte knapper for å fjerne prank */
+.secret-dismiss-btn {
+    width: 20px !important;
+    min-width: 20px !important;
+    padding: 0.5rem 0.2rem !important;
+    background: transparent !important;
+    border: none !important;
+    opacity: 0;
+}
+
 .animation-banner {
     position: relative;
     width: 100%;
